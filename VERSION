@@ -1,0 +1,29 @@
+RTC Calibration Utility v1.0
+============================
+
+For RC2014 with Ed Brindley's RTC Card Rev1
+Supports RP5C01 real-time clock chip
+
+Release Date: July 26, 2025
+Author: Miguel
+License: Open Source / Educational Use
+
+Features:
+- Hardware detection and validation
+- Interactive time setting with validation  
+- 10-minute calibration accuracy test
+- NVRAM functionality testing
+- Menu-driven interface
+- CP/M compatible (8.3 filenames)
+- Compatible with RomWBW
+
+Build Requirements:
+- z88dk compiler suite
+- Make utility
+- TASM assembler (for assembly-only builds)
+
+Target Platform:
+- RC2014 computer system
+- CP/M operating system
+- Ed Brindley's RTC Card Rev1 
+- RP5C01 RTC chip on I/O ports B4h/B5h
