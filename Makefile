@@ -5,7 +5,10 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
 # Compiler setup for RC2014/CP/M
-ZCC := zcc +cpm -compiler=sdcc --vc -Cs --Werror -lmath32 -Cc-D__MATH_MATH32 -D__MATH_MATH32 -pragma-define:CLIB_32BIT_FLOAT=1 -create-app
+Z88DK_PATH := /home/miguel/yellow-msx-series-for-rc2014/z88dk
+PATH := $(Z88DK_PATH)/bin:$(PATH)
+export PATH
+ZCC := zcc +cpm -compiler=sdcc -create-app
 
 # Application name (8.3 format)
 APP := rtccalib
