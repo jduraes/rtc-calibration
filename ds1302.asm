@@ -34,8 +34,10 @@ DS1302_CH_BIT	EQU	$80		; Clock halt bit
 _ds1302_init:
 	; Set RST and CLK low initially
 	XOR	A
-	OUT	(DS1302_RST), A
-	OUT	(DS1302_CLK), A
+	LD	C, DS1302_RST
+	OUT	(C), A
+	LD	C, DS1302_CLK
+	OUT	(C), A
 	
 	; Disable write protection
 	LD	A, DS1302_WP_WR
@@ -222,7 +224,8 @@ DS1302_READ_REG:
 	
 	; Start transmission - set RST high
 	LD	B, 1
-	OUT	(DS1302_RST), B
+	LD	C, DS1302_RST
+	OUT	(C), B
 	
 	; Small delay
 	CALL	DS1302_DELAY
@@ -235,8 +238,10 @@ DS1302_READ_REG:
 	
 	; End transmission - set RST low
 	XOR	A
-	OUT	(DS1302_RST), A
-	OUT	(DS1302_CLK), A
+	LD	C, DS1302_RST
+	OUT	(C), A
+	LD	C, DS1302_CLK
+	OUT	(C), A
 	
 	POP	BC
 	RET
@@ -250,8 +255,9 @@ DS1302_WRITE_REG:
 	PUSH	BC
 	
 	; Start transmission - set RST high
-	LD	C, 1
-	OUT	(DS1302_RST), C
+	LD	A, 1
+	LD	C, DS1302_RST
+	OUT	(C), A
 	
 	; Small delay
 	CALL	DS1302_DELAY
@@ -265,8 +271,10 @@ DS1302_WRITE_REG:
 	
 	; End transmission - set RST low
 	XOR	A
-	OUT	(DS1302_RST), A
-	OUT	(DS1302_CLK), A
+	LD	C, DS1302_RST
+	OUT	(C), A
+	LD	C, DS1302_CLK
+	OUT	(C), A
 	
 	POP	BC
 	RET
@@ -284,16 +292,25 @@ DS1302_WR_LOOP:
 	; Set data line according to bit 0 of C
 	LD	A, C
 	AND	1
-	OUT	(DS1302_DATA), A
+	PUSH	BC
+	LD	C, DS1302_DATA
+	OUT	(C), A
+	POP	BC
 	
 	; Clock high
 	LD	A, 1
-	OUT	(DS1302_CLK), A
+	PUSH	BC
+	LD	C, DS1302_CLK
+	OUT	(C), A
+	POP	BC
 	CALL	DS1302_DELAY
 	
 	; Clock low
 	XOR	A
-	OUT	(DS1302_CLK), A
+	PUSH	BC
+	LD	C, DS1302_CLK
+	OUT	(C), A
+	POP	BC
 	CALL	DS1302_DELAY
 	
 	; Shift to next bit
@@ -310,33 +327,39 @@ DS1302_WR_LOOP:
 ;
 DS1302_READ_BYTE:
 	PUSH	BC
+	PUSH	DE
 	LD	B, 8			; 8 bits to read
-	LD	C, 0			; Accumulate result here
+	LD	D, 0			; Accumulate result here
 	
 DS1302_RD_LOOP:
 	; Clock high
 	LD	A, 1
-	OUT	(DS1302_CLK), A
+	LD	C, DS1302_CLK
+	OUT	(C), A
 	CALL	DS1302_DELAY
 	
 	; Read data bit
-	IN	A, (DS1302_DATA)
+	LD	C, DS1302_DATA
+	IN	A, (C)
 	AND	1			; Mask to bit 0
 	
 	; Shift into result (LSB first)
-	SRL	C			; Shift result right
+	SRL	D			; Shift result right
+	OR	A			; Test data bit
 	JR	Z, DS1302_RD_SKIP	; If bit was 0, skip
-	SET	7, C			; Set bit 7 if data bit was 1
+	SET	7, D			; Set bit 7 if data bit was 1
 	
 DS1302_RD_SKIP:
 	; Clock low
 	XOR	A
-	OUT	(DS1302_CLK), A
+	LD	C, DS1302_CLK
+	OUT	(C), A
 	CALL	DS1302_DELAY
 	
 	DJNZ	DS1302_RD_LOOP
 	
-	LD	A, C			; Return result
+	LD	A, D			; Return result
+	POP	DE
 	POP	BC
 	RET
 
