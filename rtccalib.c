@@ -1,5 +1,5 @@
 #include "cpm.h"
-#include "rp5c01.h"
+#include "ds1302.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,26 +21,26 @@ inline uint8_t decimalToBcd(uint8_t decimal) {
 }
 
 // Convert datetime from BCD to decimal
-static void convertFromBcd(rtcDateTime *datetime) __z88dk_fastcall {
+static void convertFromBcd(DS1302_Time *datetime) __z88dk_fastcall {
     datetime->second = bcdToDecimal(datetime->second);
     datetime->minute = bcdToDecimal(datetime->minute);
     datetime->hour   = bcdToDecimal(datetime->hour);
-    datetime->day    = bcdToDecimal(datetime->day);
+    datetime->date   = bcdToDecimal(datetime->date);
     datetime->month  = bcdToDecimal(datetime->month);
     datetime->year   = bcdToDecimal(datetime->year);
 }
 
 // Convert datetime from decimal to BCD
-static void convertToBcd(rtcDateTime *datetime) __z88dk_fastcall {
+static void convertToBcd(DS1302_Time *datetime) __z88dk_fastcall {
     datetime->second = decimalToBcd(datetime->second);
     datetime->minute = decimalToBcd(datetime->minute);
     datetime->hour   = decimalToBcd(datetime->hour);
-    datetime->day    = decimalToBcd(datetime->day);
+    datetime->date   = decimalToBcd(datetime->date);
     datetime->month  = decimalToBcd(datetime->month);
     datetime->year   = decimalToBcd(datetime->year);
 }
 
-rtcDateTime datetime;
+DS1302_Time datetime;
 char line[10];
 
 // Convert 2-character string to BCD
@@ -76,7 +76,7 @@ uint8_t readSetting(void) {
 }
 
 // Calculate time difference in seconds
-long timeDifferenceInSeconds(rtcDateTime *start, rtcDateTime *end) {
+long timeDifferenceInSeconds(DS1302_Time *start, DS1302_Time *end) {
     long startSeconds = start->second + (start->minute * 60) + (start->hour * 3600);
     long endSeconds = end->second + (end->minute * 60) + (end->hour * 3600);
     
@@ -89,9 +89,9 @@ long timeDifferenceInSeconds(rtcDateTime *start, rtcDateTime *end) {
 }
 
 // Display current time
-void displayTime(rtcDateTime *dt) {
+void displayTime(DS1302_Time *dt) {
     printf("%02d-%02d-%02d %02d:%02d:%02d", 
-           dt->year, dt->month, dt->day, 
+           dt->year, dt->month, dt->date, 
            dt->hour, dt->minute, dt->second);
 }
 
@@ -107,7 +107,7 @@ void setTime(void) {
     datetime.month = readSetting();
 
     printf("\r\nDay (01-31): ");
-    datetime.day = readSetting();
+    datetime.date = readSetting();
 
     printf("\r\nHour (00-23): ");
     datetime.hour = readSetting();
@@ -118,16 +118,15 @@ void setTime(void) {
     printf("\r\nSecond (00-59): ");
     datetime.second = readSetting();
 
-    rp5c01SetMode(0); // Disable timer
-    rp5c01SetTime(&datetime);
-    rp5c01SetMode(MD_TIME); // Enable timer
+    convertToBcd(6datetime);
+    ds1302_set_time(6datetime);
 
     printf("\r\nTime set successfully!\r\n");
 }
 
 // Perform calibration test
 void performCalibration(void) {
-    rtcDateTime startTime, endTime;
+    DS1302_Time startTime, endTime;
     long actualSeconds, expectedSeconds;
     double accuracy;
     
@@ -144,8 +143,8 @@ void performCalibration(void) {
     }
     
     // Get start time
-    rp5c01GetTime(&startTime);
-    convertFromBcd(&startTime);
+    ds1302_get_time(6startTime);
+    convertFromBcd(6startTime);
     
     printf("\r\nCalibration started at: ");
     displayTime(&startTime);
@@ -173,8 +172,8 @@ void performCalibration(void) {
     }
     
     // Get end time
-    rp5c01GetTime(&endTime);
-    convertFromBcd(&endTime);
+    ds1302_get_time(6endTime);
+    convertFromBcd(6endTime);
     
     printf("\r\nCalibration ended at: ");
     displayTime(&endTime);
@@ -212,32 +211,17 @@ void testRtc(void) {
     
     // Test NVRAM write/read
     const uint8_t testValue = 0xA5;
-    const uint8_t errorCode = rp5c01SetByte(0, testValue);
+    uint8_t detected = ds1302_detect();
     
-    if (errorCode) {
-        printf("NVRAM write failed (error code: %02X)\r\n", errorCode);
+    if (!detected) {
+        printf("DS1302 not detected\r\n");
         return;
     }
-    
-    const uint16_t readData = rp5c01GetByte(0);
-    const uint8_t readValue = readData & 0xFF;
-    const uint8_t readError = (readData >> 8) & 0xFF;
-    
-    if (readError) {
-        printf("NVRAM read failed (error code: %02X)\r\n", readError);
-        return;
-    }
-    
-    if (readValue == testValue) {
-        printf("NVRAM test: PASSED\r\n");
-    } else {
-        printf("NVRAM test: FAILED (wrote 0x%02X, read 0x%02X)\r\n", testValue, readValue);
-        return;
-    }
+    printf("DS1302 detected\r\n");
     
     // Test time read
-    rp5c01GetTime(&datetime);
-    convertFromBcd(&datetime);
+    ds1302_get_time(6datetime);
+    convertFromBcd(6datetime);
     
     printf("Current time: ");
     displayTime(&datetime);
@@ -272,23 +256,21 @@ void main(void) {
     printf("========================================\r\n");
 
     // Detect RTC hardware
-    const uint8_t detected = rp5c01Detect();
+    const uint8_t detected = ds1302_detect();
     
     if (!detected) {
-        printf("ERROR: RP5C01 RTC not detected!\r\n");
+        printf("ERROR: DS1302 RTC not detected!\r\n");
         printf("Please check:\r\n");
         printf("- RTC card is properly installed\r\n");
-        printf("- Card is configured for I/O ports B4h/B5h\r\n");
+        printf("- Card is configured for correct I/O ports\r\n");
         printf("- Backup battery is connected\r\n");
         exit(1);
     }
     
-    printf("RP5C01 RTC detected and ready.\r\n");
+    printf("DS1302 RTC detected and ready.\r\n");
     
     // Initialize RTC
-    rp5c01TestMode(0);           // Clear test modes
-    rp5c01SetHourMode(HR_MD_24); // 24-hour format
-    rp5c01SetMode(MD_TIME);      // Enable timer
+    ds1302_init(); // Initialize DS1302
     
     // Main menu loop
     while (true) {
@@ -304,10 +286,10 @@ void main(void) {
         switch (command) {
             case 'T':
             case 't':
-                rp5c01GetTime(&datetime);
-                convertFromBcd(&datetime);
+                ds1302_get_time(6datetime);
+                convertFromBcd(6datetime);
                 printf("Current time: ");
-                displayTime(&datetime);
+                displayTime(6datetime);
                 printf("\r\n");
                 break;
                 

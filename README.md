@@ -4,7 +4,7 @@ A comprehensive RTC calibration and testing utility designed specifically for th
 
 ## Features
 
-- **Hardware Detection**: Automatically detects RP5C01 RTC chip presence
+- **Hardware Detection**: Automatically detects DS1302N+ RTC chip presence
 - **Time Display**: Shows current RTC time in 24-hour format
 - **Time Setting**: Interactive time setting with validation
 - **Calibration Test**: Measures RTC accuracy over a 10-minute period
@@ -15,8 +15,8 @@ A comprehensive RTC calibration and testing utility designed specifically for th
 
 - RC2014 computer system
 - Ed Brindley's RTC Card Rev1 
-- RP5C01 RTC chip
-- RTC card configured for I/O ports B4h/B5h
+- DS1302N+ RTC chip
+- RTC card configured for 3-wire serial interface
 - Backup battery connected and functional
 
 ## Software Requirements
@@ -87,8 +87,8 @@ When setting time, enter values in 2-digit format:
 Following 8.3 filename conventions for CP/M compatibility:
 
 - `rtccalib.c` - Main application code
-- `rp5c01.asm` - RP5C01 RTC driver assembly routines
-- `rp5c01.h` - RTC driver header file
+- `ds1302.asm` - DS1302 RTC driver assembly routines
+- `ds1302.h` - RTC driver header file
 - `cpm.asm` - CP/M system interface routines
 - `cpm.h` - CP/M interface header
 - `Makefile` - Build configuration
@@ -97,16 +97,17 @@ Following 8.3 filename conventions for CP/M compatibility:
 
 ### RTC Interface
 
-The RP5C01 RTC chip uses two I/O ports:
-- Port B4h: Register select
-- Port B5h: Data port
+The DS1302N+ RTC chip uses a 3-wire serial interface:
+- CLK: Clock line
+- DAT: Bidirectional data line
+- RST: Reset/Chip enable line
 
 The driver supports:
 - 24-hour time format
 - BCD time/date storage
-- NVRAM access (13 bytes)
 - Hardware detection
-- Mode control (timer/alarm/RAM modes)
+- Write protection control
+- Clock halt/enable control
 
 ### Memory Usage
 
@@ -118,13 +119,14 @@ The application is designed to run efficiently on 8-bit systems with limited mem
 
 ## Troubleshooting
 
-### "RP5C01 RTC not detected" Error
+### "DS1302 RTC not detected" Error
 
 Check the following:
 1. RTC card is properly seated in RC2014 backplane
-2. Card jumpers configured for I/O ports B4h/B5h  
+2. Card configured for correct I/O ports (CLK/DAT/RST)
 3. Backup battery is connected and has sufficient voltage
 4. No I/O port conflicts with other cards
+5. DS1302N+ chip is properly installed
 
 ### Calibration Issues
 

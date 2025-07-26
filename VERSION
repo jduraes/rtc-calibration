@@ -2,7 +2,7 @@ RTC Calibration Utility v1.0
 ============================
 
 For RC2014 with Ed Brindley's RTC Card Rev1
-Supports RP5C01 real-time clock chip
+Supports DS1302N+ real-time clock chip
 
 Release Date: July 26, 2025
 Author: Miguel
@@ -26,4 +26,4 @@ Target Platform:
 - RC2014 computer system
 - CP/M operating system
 - Ed Brindley's RTC Card Rev1 
-- RP5C01 RTC chip on I/O ports B4h/B5h
+- DS1302N+ RTC chip with 3-wire serial interface

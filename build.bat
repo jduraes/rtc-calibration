@@ -1,14 +1,14 @@
 @echo off
 rem Build script for RTC Calibration Utility using TASM
-rem For RC2014 with Ed Brindley's RTC Card Rev1
+rem For RC2014 with Ed Brindley's RTC Card Rev1 (DS1302N+)
 
 echo Building RTC Calibration Utility for RC2014...
 
-rem Assemble the RTC driver
-tasm rp5c01.asm rp5c01.obj
+rem Assemble the DS1302 RTC driver
+tasm ds1302.asm ds1302.obj
 
 rem Assemble CP/M interface
-tasm cpm.asm cpm.obj  
+tasm cpm.asm cpm.obj
 
 rem Note: Main C file would need separate C compiler
 rem This script shows the assembly compilation steps

@@ -14,12 +14,12 @@ ZCC := zcc +cpm -compiler=sdcc -create-app
 APP := rtccalib
 
 # Source files
-SOURCES := rtccalib.c rp5c01.asm rp5c01.h cpm.asm cpm.h
+SOURCES := rtccalib.c ds1302.asm ds1302.h cpm.asm cpm.h
 
 all: $(APP).com
 
 $(APP).com: $(SOURCES)
-	$(ZCC) rtccalib.c rp5c01.asm cpm.asm -o $(APP).com
+	$(ZCC) rtccalib.c ds1302.asm cpm.asm -o $(APP).com
 	@echo "Compiled $(APP).com successfully"
 
 clean:
