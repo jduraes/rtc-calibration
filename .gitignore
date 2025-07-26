@@ -1,0 +1,17 @@
+# Build artifacts
+*.com
+*.obj
+*.o
+*.map
+*.lst
+*.sym
+*.tmp
+
+# Editor files
+*~
+*.swp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
