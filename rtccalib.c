@@ -1,8 +1,12 @@
 #include "cpm.h"
 #include "rtc.h"
+#include "ansi.h"
 
 // Function declarations
 void printLong(unsigned long num);
+
+// Global ANSI support flag
+int ansi_enabled = 0;
 
 // Simple putchar implementation for CP/M
 int putchar(int c) {
@@ -633,9 +637,35 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.5.1 (HBIOS)\r\n");
+    // Detect ANSI support
+    g_ansi_capability = ANSI_SUPPORTED; // Assume supported for now
+    ansi_enabled = 1;
+    
+    if (ansi_enabled) {
+        ansi_clear_screen();
+        ansi_home_cursor();
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
+        ansi_set_bold();
+    }
+    
+    printStr("RTC Calibration Utility v0.6.0 (HBIOS)\r\n");
+    
+    if (ansi_enabled) {
+        ansi_set_fg_color(ANSI_BRIGHT_WHITE);
+        ansi_reset_attributes();
+    }
+    
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
+    
+    if (ansi_enabled) {
+        ansi_set_fg_color(ANSI_YELLOW);
+    }
+    
     printStr("========================================\r\n");
+    
+    if (ansi_enabled) {
+        ansi_reset_colors();
+    }
 
     // Detect RTC hardware via HBIOS
     if (!hbios_rtc_detect()) {
@@ -651,9 +681,26 @@ void main(void) {
     
     // Main menu loop
     while (1) {
+        if (ansi_enabled) {
+            ansi_set_fg_color(ANSI_BRIGHT_BLUE);
+            ansi_set_bold();
+        }
         printStr("\r\n--- Main Menu ---\r\n");
+        
+        if (ansi_enabled) {
+            ansi_set_fg_color(ANSI_WHITE);
+            ansi_reset_attributes();
+        }
         printStr("S)how Date/Time - Set D)ate / T)ime - H)ardware Test - C)alibrate - ?)Help - Q)uit\r\n");
+        
+        if (ansi_enabled) {
+            ansi_set_fg_color(ANSI_BRIGHT_GREEN);
+        }
         printStr("Command: ");
+        
+        if (ansi_enabled) {
+            ansi_reset_colors();
+        }
         
         // Wait for command
         command = 0;
@@ -667,11 +714,27 @@ void main(void) {
                 result = hbios_rtc_get_time(&datetime);
                 if (result == 0 || result == 0xB8) {
                     convertFromBcd(&datetime);
+                    if (ansi_enabled) {
+                        ansi_set_fg_color(ANSI_CYAN);
+                    }
                     printStr("Current time: ");
+                    if (ansi_enabled) {
+                        ansi_set_fg_color(ANSI_BRIGHT_WHITE);
+                        ansi_set_bold();
+                    }
                     printDateTime(&datetime);
+                    if (ansi_enabled) {
+                        ansi_reset_colors();
+                    }
                     printStr("\r\n");
                 } else {
+                    if (ansi_enabled) {
+                        ansi_set_fg_color(ANSI_BRIGHT_RED);
+                    }
                     printStr("Error reading RTC time\r\n");
+                    if (ansi_enabled) {
+                        ansi_reset_colors();
+                    }
                 }
                 break;
                 

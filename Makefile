@@ -13,9 +13,9 @@ ASMFLAGS = +cpm
 TARGET_NAME = rtccalib
 
 # Source files
-C_SOURCES = rtccalib.c
+C_SOURCES = rtccalib.c ansi.c
 ASM_SOURCES = rtc.asm cpm.asm measure.asm
-HEADERS = rtc.h cpm.h
+HEADERS = rtc.h cpm.h ansi.h
 
 # Object files
 C_OBJECTS = $(C_SOURCES:.c=.o)
