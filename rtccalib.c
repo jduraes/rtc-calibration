@@ -628,6 +628,7 @@ void showHelp(void) {
     printStr("  T - Set RTC time (with arrow key adjustment, 10s increments)\r\n");
     printStr("  H - Hardware test\r\n");
     printStr("  C - Calibrate RTC speed\r\n");
+    printStr("  A - Toggle ANSI colors on/off\r\n");
     printStr("  ? - Show this help\r\n");
     printStr("  Q - Quit program\r\n");
     printStr("\r\nFor RC2014 with RomWBW HBIOS RTC support\r\n");
@@ -637,9 +638,9 @@ void main(void) {
     char command;
     int result;
     
-    // Detect ANSI support
-    g_ansi_capability = ANSI_SUPPORTED; // Assume supported for now
-    ansi_enabled = 1;
+    // Disable ANSI for now until we can properly detect support
+    g_ansi_capability = ANSI_NOT_SUPPORTED;
+    ansi_enabled = 0;
     
     if (ansi_enabled) {
         ansi_clear_screen();
@@ -648,23 +649,14 @@ void main(void) {
         ansi_set_bold();
     }
     
-    printStr("RTC Calibration Utility v0.6.0 (HBIOS)\r\n");
-    
-    if (ansi_enabled) {
-        ansi_set_fg_color(ANSI_BRIGHT_WHITE);
-        ansi_reset_attributes();
-    }
-    
+    printStr("RTC Calibration Utility v0.6.1 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
-    
-    if (ansi_enabled) {
-        ansi_set_fg_color(ANSI_YELLOW);
-    }
-    
     printStr("========================================\r\n");
-    
+    printStr("ANSI colors: ");
     if (ansi_enabled) {
-        ansi_reset_colors();
+        printStr("ENABLED\r\n");
+    } else {
+        printStr("DISABLED (use A command to enable)\r\n");
     }
 
     // Detect RTC hardware via HBIOS
@@ -691,7 +683,7 @@ void main(void) {
             ansi_set_fg_color(ANSI_WHITE);
             ansi_reset_attributes();
         }
-        printStr("S)how Date/Time - Set D)ate / T)ime - H)ardware Test - C)alibrate - ?)Help - Q)uit\r\n");
+        printStr("S)how Date/Time - Set D)ate / T)ime - H)ardware Test - C)alibrate - A)NSI Colors - ?)Help - Q)uit\r\n");
         
         if (ansi_enabled) {
             ansi_set_fg_color(ANSI_BRIGHT_GREEN);
@@ -756,6 +748,18 @@ void main(void) {
             case 'C':
             case 'c':
                 calibrateRtc();
+                break;
+                
+            case 'A':
+            case 'a':
+                ansi_enabled = !ansi_enabled;
+                if (ansi_enabled) {
+                    g_ansi_capability = ANSI_SUPPORTED;
+                    printStr("ANSI colors ENABLED\r\n");
+                } else {
+                    g_ansi_capability = ANSI_NOT_SUPPORTED;
+                    printStr("ANSI colors DISABLED\r\n");
+                }
                 break;
                 
             case '?':
