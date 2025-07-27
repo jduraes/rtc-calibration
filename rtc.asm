@@ -2,13 +2,9 @@
 
 	SECTION code_user
 
-; HBIOS function constants from hbios.inc
-BF_RTC		EQU	20h		; RTC function
-BF_RTCGETTIM	EQU	BF_RTC + 0	; Get time subfunction
-BF_RTCSETTIM	EQU	BF_RTC + 1	; Set time subfunction
-
-; HBIOS entry points
-HB_INVOKE	EQU	0FFF0h		; HBIOS invoke entry point
+; HBIOS RTC function constants
+BF_RTC		EQU	20h		; RTC get time function
+BF_RTCSET	EQU	21h		; RTC set time function
 
 
 ;

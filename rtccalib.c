@@ -154,7 +154,7 @@ void printHex(unsigned char val) {
 
 // Test RTC functionality
 void testRtc(void) {
-    RTC_Time test_time = {0, 0, 0, 0, 0, 0}; // Fresh local variable
+    RTC_Time test_time = {0, 0, 0, 0, 0, 0};
     
     printStr("\r\n=== RTC Hardware Test ===\r\n");
     
@@ -162,44 +162,21 @@ void testRtc(void) {
         printStr("RTC not detected via HBIOS\r\n");
         return;
     }
-    printStr("RTC detected via HBIOS\r\n");
     
-    // Test HBIOS call directly
-    int hbios_err = hbios_rtc_test();
-    printStr("HBIOS: ");
-    printHex((unsigned char)hbios_err);
-    printStr("\r\n");
+    printStr("RTC hardware detected successfully\r\n");
     
-    // Test our wrapper function with fresh variable 
     int result = hbios_rtc_get_time(&test_time);
-    printStr("Wrapper: ");
-    printHex((unsigned char)result);
-    printStr(" (full: ");
-    printHex((unsigned char)(result >> 8));
-    printHex((unsigned char)result);
-    printStr(")\r\n");
-    
-    // Accept 0xB8 as valid since data is good
     if (result == 0 || result == 0xB8) {
-        printStr("Raw HBIOS data (BCD): ");
-        printHex(test_time.second); printChar(' ');
-        printHex(test_time.minute); printChar(' ');
-        printHex(test_time.hour); printChar(' ');
-        printHex(test_time.date); printChar(' ');
-        printHex(test_time.month); printChar(' ');
-        printHex(test_time.year);
-        printStr("\r\n");
-        
         convertFromBcd(&test_time);
         printStr("Current RTC time: ");
         printDateTime(&test_time);
         printStr("\r\n");
+        printStr("RTC hardware is functioning correctly\r\n");
     } else {
         printStr("Error reading RTC time\r\n");
     }
     
-    printStr("RTC hardware test completed.\r\n");
-    printStr("Press any key to continue...\r\n");
+    printStr("\r\nPress any key to continue...\r\n");
     while (cRawIo() == 0) { }
 }
 
