@@ -295,7 +295,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.1.9 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.1.10 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
