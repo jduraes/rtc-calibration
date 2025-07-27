@@ -193,190 +193,37 @@ int parseTime(char *timeStr, unsigned char *hour, unsigned char *minute, unsigne
     return 1;
 }
 
-// Enhanced string reading with arrow key support for time adjustment
-// Returns: 0=success, 1=ESC abort, 2=use default
-int readStringWithArrows(char *buffer, int maxLen, char *defaultStr, int *timeAdjust) {
-    int pos = 0;
-    char ch;
-    int escapeSeq = 0;
-    
-    *timeAdjust = 0;  // Reset time adjustment
-    
-    // Show default value in brackets
-    printStr("[");
-    printStr(defaultStr);
-    printStr("]: ");
-    
-    while (pos < maxLen - 1) {
-        ch = cRawIo();
-        if (ch == 0) continue;  // No key pressed
-        
-        // Handle escape sequences
-        if (escapeSeq == 1) {
-            if (ch == '[') {
-                escapeSeq = 2;
-                continue;
-            } else {
-                escapeSeq = 0;
-                return 1;  // ESC without sequence = abort
-            }
-        }
-        
-        if (escapeSeq == 2) {
-            escapeSeq = 0;
-            if (ch == 'A') {  // Up arrow
-                *timeAdjust = 5;  // +5 seconds
-                printStr("[+5s] ");
-                return 2;  // Use default with adjustment
-            } else if (ch == 'B') {  // Down arrow
-                *timeAdjust = -5;  // -5 seconds
-                printStr("[-5s] ");
-                return 2;  // Use default with adjustment
-            }
-            continue;
-        }
-        
-        if (ch == 27) {  // ESC key
-            escapeSeq = 1;
-            continue;
-        }
-        
-        if (ch == 13 || ch == 10) {  // Enter key
-            if (pos == 0) {
-                return 2;  // Use default (empty input)
-            }
-            buffer[pos] = '\0';
-            printStr("\r\n");
-            return 0;  // Success with user input
-        }
-        
-        if (ch == 8 || ch == 127) {  // Backspace
-            if (pos > 0) {
-                pos--;
-                printStr("\b \b");  // Backspace, space, backspace
-            }
-            continue;
-        }
-        
-        // Accept printable characters
-        if (ch >= 32 && ch <= 126) {
-            buffer[pos] = ch;
-            pos++;
-            printChar(ch);
-        }
-    }
-    
-    buffer[pos] = '\0';
-    return 0;
-}
-
-// Format time as HH:MM:SS string
-void formatTime(char *buffer, unsigned char hour, unsigned char minute, unsigned char second) {
-    buffer[0] = '0' + (hour / 10);
-    buffer[1] = '0' + (hour % 10);
-    buffer[2] = ':';
-    buffer[3] = '0' + (minute / 10);
-    buffer[4] = '0' + (minute % 10);
-    buffer[5] = ':';
-    buffer[6] = '0' + (second / 10);
-    buffer[7] = '0' + (second % 10);
-    buffer[8] = '\0';
-}
-
-// Format date as dd/mm/yyyy string
-void formatDate(char *buffer, unsigned char day, unsigned char month, unsigned char year) {
-    buffer[0] = '0' + (day / 10);
-    buffer[1] = '0' + (day % 10);
-    buffer[2] = '/';
-    buffer[3] = '0' + (month / 10);
-    buffer[4] = '0' + (month % 10);
-    buffer[5] = '/';
-    buffer[6] = '2';
-    buffer[7] = '0';
-    buffer[8] = '0' + ((year + 2000) / 10 % 10);
-    buffer[9] = '0' + ((year + 2000) % 10);
-    buffer[10] = '\0';
-}
-
-// Adjust time by seconds (can be positive or negative)
-void adjustTime(unsigned char *hour, unsigned char *minute, unsigned char *second, int adjustment) {
-    int totalSeconds = *hour * 3600 + *minute * 60 + *second + adjustment;
-    
-    // Handle day wraparound
-    while (totalSeconds < 0) totalSeconds += 86400;  // Add 24 hours
-    while (totalSeconds >= 86400) totalSeconds -= 86400;  // Subtract 24 hours
-    
-    *hour = totalSeconds / 3600;
-    *minute = (totalSeconds % 3600) / 60;
-    *second = totalSeconds % 60;
-}
-
-// Set RTC time with enhanced UI
+// Set RTC time - EMERGENCY REVERT TO SIMPLE VERSION
 void setTime(void) {
     char dateBuffer[20];
     char timeBuffer[20];
-    char defaultDateBuffer[20];
-    char defaultTimeBuffer[20];
     unsigned char day, month, year, hour, minute, second;
-    int result, timeAdjust;
     
     printStr("\r\n=== Set RTC Time ===\r\n");
-    printStr("Enhanced UI: Press Enter for default, Up/Down arrows for time ±5s\r\n");
-    printStr("ESC to abort\r\n\r\n");
+    printStr("Enter date and time (ESC to abort)\r\n\r\n");
     
-    // Get current RTC time for defaults
-    result = hbios_rtc_get_time(&datetime);
-    if (result != 0 && result != 0xB8) {
-        printStr("Error reading current RTC time\r\n");
+    // Get date in dd/mm/yyyy format
+    printStr("Date (dd/mm/yyyy): ");
+    if (readString(dateBuffer, sizeof(dateBuffer))) {
+        printStr("Aborted\r\n");
         return;
     }
-    convertFromBcd(&datetime);
     
-    // Format current date and time as defaults
-    formatDate(defaultDateBuffer, datetime.date, datetime.month, datetime.year);
-    formatTime(defaultTimeBuffer, datetime.hour, datetime.minute, datetime.second);
-    
-    // Get date with default
-    printStr("Date (dd/mm/yyyy) ");
-    result = readStringWithArrows(dateBuffer, sizeof(dateBuffer), defaultDateBuffer, &timeAdjust);
-    
-    if (result == 1) {  // ESC abort
-        printStr("\r\nAborted\r\n");
+    if (!parseDate(dateBuffer, &day, &month, &year)) {
+        printStr("Invalid date format. Use dd/mm/yyyy\r\n");
         return;
-    } else if (result == 2) {  // Use default
-        day = datetime.date;
-        month = datetime.month;
-        year = datetime.year;
-        printStr("\r\n");
-    } else {  // Parse user input
-        if (!parseDate(dateBuffer, &day, &month, &year)) {
-            printStr("\r\nInvalid date format. Use dd/mm/yyyy\r\n");
-            return;
-        }
     }
     
-    // Get time with default and arrow key support
-    printStr("Time (HH:MM:SS) ");
-    result = readStringWithArrows(timeBuffer, sizeof(timeBuffer), defaultTimeBuffer, &timeAdjust);
-    
-    if (result == 1) {  // ESC abort
-        printStr("\r\nAborted\r\n");
+    // Get time in HH:MM:SS format
+    printStr("Time (HH:MM:SS): ");
+    if (readString(timeBuffer, sizeof(timeBuffer))) {
+        printStr("Aborted\r\n");
         return;
-    } else if (result == 2) {  // Use default or arrow adjustment
-        hour = datetime.hour;
-        minute = datetime.minute;
-        second = datetime.second;
-        
-        // Apply arrow key adjustment if any
-        if (timeAdjust != 0) {
-            adjustTime(&hour, &minute, &second, timeAdjust);
-        }
-        printStr("\r\n");
-    } else {  // Parse user input
-        if (!parseTime(timeBuffer, &hour, &minute, &second)) {
-            printStr("\r\nInvalid time format. Use HH:MM:SS\r\n");
-            return;
-        }
+    }
+    
+    if (!parseTime(timeBuffer, &hour, &minute, &second)) {
+        printStr("Invalid time format. Use HH:MM:SS\r\n");
+        return;
     }
     
     // Set the datetime structure
@@ -620,7 +467,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.3.0 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.3.1 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
