@@ -1,6 +1,9 @@
 #include "cpm.h"
 #include "rtc.h"
 
+// Function declarations
+void printLong(unsigned long num);
+
 // Simple putchar implementation for CP/M
 int putchar(int c) {
     __asm
@@ -130,6 +133,125 @@ int readString(char *buffer, int maxLen) {
     return 0;
 }
 
+// Add seconds and round to next 10-second mark
+void adjustTimeRounded(RTC_Time *time, int seconds) {
+    int total_seconds = time->second + seconds;
+    int total_minutes = time->minute;
+    int total_hours = time->hour;
+    
+    // Handle seconds overflow/underflow
+    while (total_seconds >= 60) {
+        total_seconds -= 60;
+        total_minutes++;
+    }
+    while (total_seconds < 0) {
+        total_seconds += 60;
+        total_minutes--;
+    }
+    
+    // Round to next 10-second mark
+    if (seconds > 0) {
+        // Round up to next decade
+        total_seconds = ((total_seconds + 9) / 10) * 10;
+        if (total_seconds >= 60) {
+            total_seconds = 0;
+            total_minutes++;
+        }
+    } else if (seconds < 0) {
+        // Round down to previous decade
+        total_seconds = (total_seconds / 10) * 10;
+    }
+    
+    // Handle minutes overflow/underflow
+    while (total_minutes >= 60) {
+        total_minutes -= 60;
+        total_hours++;
+    }
+    while (total_minutes < 0) {
+        total_minutes += 60;
+        total_hours--;
+    }
+    
+    // Handle hours overflow/underflow
+    while (total_hours >= 24) {
+        total_hours -= 24;
+    }
+    while (total_hours < 0) {
+        total_hours += 24;
+    }
+    
+    // Update only the time portion
+    time->second = total_seconds;
+    time->minute = total_minutes;
+    time->hour = total_hours;
+}
+
+// Print only time portion (HH:MM:SS)
+void printTimeOnly(RTC_Time *time) {
+    printNum2(time->hour);
+    printChar(':');
+    printNum2(time->minute);
+    printChar(':');
+    printNum2(time->second);
+}
+
+// Interactive time setter with arrow key support
+// Returns 1 if ESC pressed (abort), 0 if time set successfully
+int interactiveTimeSet(RTC_Time *time) {
+    char ch;
+    int escape_seq = 0;
+    
+    printStr("\r\nUse UP/DOWN arrows to adjust time by 10 seconds (rounded)\r\n");
+    printStr("Press ENTER to set this time, ESC to abort\r\n\r\n");
+    
+    while (1) {
+        // Display current time (time only, not date)
+        printStr("\rTime: ");
+        printTimeOnly(time);
+        printStr("     ");  // Extra spaces to clear any leftover characters
+        
+        // Wait for key input
+        ch = cRawIo();
+        if (ch == 0) continue;
+        
+        if (escape_seq == 0 && ch == 27) {  // ESC or start of arrow sequence
+            escape_seq = 1;
+            continue;
+        }
+        
+        if (escape_seq == 1) {
+            if (ch == '[') {
+                escape_seq = 2;
+                continue;
+            } else {
+                // Just ESC key, abort
+                return 1;
+            }
+        }
+        
+        if (escape_seq == 2) {
+            escape_seq = 0;
+            if (ch == 'A') {  // UP arrow
+                adjustTimeRounded(time, 10);  // Add 10 seconds, rounded
+            } else if (ch == 'B') {  // DOWN arrow
+                adjustTimeRounded(time, -10);  // Subtract 10 seconds, rounded
+            }
+            // No continue here - let it immediately redraw
+        }
+        
+        // Reset escape sequence state for any other key
+        escape_seq = 0;
+        
+        if (ch == 13 || ch == 10) {  // Enter key - set the time
+            return 0;
+        }
+        
+        if (ch == 27) {  // Direct ESC without sequence
+            return 1;
+        }
+    }
+}
+
 // Parse date string in dd/mm/yyyy format
 // Returns 1 on success, 0 on error
 int parseDate(char *dateStr, unsigned char *day, unsigned char *month, unsigned char *year) {
@@ -193,49 +315,121 @@ int parseTime(char *timeStr, unsigned char *hour, unsigned char *minute, unsigne
     return 1;
 }
 
-// Set RTC time - EMERGENCY REVERT TO SIMPLE VERSION
-void setTime(void) {
+// Set RTC date only
+void setDate(void) {
     char dateBuffer[20];
-    char timeBuffer[20];
-    unsigned char day, month, year, hour, minute, second;
+    RTC_Time current_time;
+    unsigned char day, month, year;
     
-    printStr("\r\n=== Set RTC Time ===\r\n");
-    printStr("Enter date and time (ESC to abort)\r\n\r\n");
+    printStr("\r\n=== Set RTC Date ===\r\n");
     
-    // Get date in dd/mm/yyyy format
-    printStr("Date (dd/mm/yyyy): ");
+    // Get current RTC time to preserve time and use current date as default
+    int rtc_result = hbios_rtc_get_time(&current_time);
+    if (rtc_result == 0 || rtc_result == 0xB8) {
+        convertFromBcd(&current_time);
+        printStr("Current date: ");
+        printNum2(current_time.date);
+        printChar('/');
+        printNum2(current_time.month);
+        printStr("/20");
+        printNum2(current_time.year);
+        printStr("\r\n");
+    }
+    
+    // Get date in dd/mm/yyyy format with default
+    if (rtc_result == 0 || rtc_result == 0xB8) {
+        printStr("New date (dd/mm/yyyy) [");
+        printNum2(current_time.date);
+        printChar('/');
+        printNum2(current_time.month);
+        printStr("/20");
+        printNum2(current_time.year);
+        printStr("]: ");
+    } else {
+        printStr("New date (dd/mm/yyyy): ");
+    }
+    
     if (readString(dateBuffer, sizeof(dateBuffer))) {
         printStr("Aborted\r\n");
         return;
     }
     
-    if (!parseDate(dateBuffer, &day, &month, &year)) {
-        printStr("Invalid date format. Use dd/mm/yyyy\r\n");
-        return;
+    // If empty, use current date
+    if (dateBuffer[0] == '\0' && (rtc_result == 0 || rtc_result == 0xB8)) {
+        day = current_time.date;
+        month = current_time.month;
+        year = current_time.year;
+    } else {
+        if (!parseDate(dateBuffer, &day, &month, &year)) {
+            printStr("Invalid date format. Use dd/mm/yyyy\r\n");
+            return;
+        }
     }
     
-    // Get time in HH:MM:SS format
-    printStr("Time (HH:MM:SS): ");
-    if (readString(timeBuffer, sizeof(timeBuffer))) {
-        printStr("Aborted\r\n");
-        return;
-    }
-    
-    if (!parseTime(timeBuffer, &hour, &minute, &second)) {
-        printStr("Invalid time format. Use HH:MM:SS\r\n");
-        return;
-    }
-    
-    // Set the datetime structure
+    // Preserve current time, update date
     datetime.date = day;
     datetime.month = month;
     datetime.year = year;
-    datetime.hour = hour;
-    datetime.minute = minute;
-    datetime.second = second;
+    if (rtc_result == 0 || rtc_result == 0xB8) {
+        datetime.hour = current_time.hour;
+        datetime.minute = current_time.minute;
+        datetime.second = current_time.second;
+    } else {
+        datetime.hour = 0;
+        datetime.minute = 0;
+        datetime.second = 0;
+    }
     
     // Convert to BCD and set the RTC
     convertToBcd(&datetime);
+    if (hbios_rtc_set_time(&datetime) == 0) {
+        printStr("\r\nDate set successfully to: ");
+        // Convert back to decimal for display
+        convertFromBcd(&datetime);
+        printNum2(datetime.date);
+        printChar('/');
+        printNum2(datetime.month);
+        printStr("/20");
+        printNum2(datetime.year);
+        printStr("\r\n");
+    } else {
+        printStr("\r\nError setting RTC date!\r\n");
+    }
+}
+
+// Set RTC time with interactive adjustment
+void setTime(void) {
+    RTC_Time current_time;
+    
+    printStr("\r\n=== Set RTC Time ===\r\n");
+    
+    // Get current RTC time to use as starting point
+    int rtc_result = hbios_rtc_get_time(&current_time);
+    if (rtc_result == 0 || rtc_result == 0xB8) {
+        convertFromBcd(&current_time);
+        printStr("Current time: ");
+        printDateTime(&current_time);
+        printStr("\r\n");
+    } else {
+        printStr("Cannot read current time, using defaults\r\n");
+        current_time.hour = 12;
+        current_time.minute = 0;
+        current_time.second = 0;
+        current_time.date = 1;
+        current_time.month = 1;
+        current_time.year = 24;
+    }
+    
+    // Interactive time adjustment
+    if (interactiveTimeSet(&current_time)) {
+        printStr("\r\nAborted\r\n");
+        return;
+    }
+    
+    // Set the RTC with the adjusted time
+    datetime = current_time;  // Copy the adjusted time
+    convertToBcd(&datetime);
+    
     if (hbios_rtc_set_time(&datetime) == 0) {
         printStr("\r\nTime set successfully to: ");
         // Convert back to decimal for display
@@ -364,6 +558,11 @@ long measureRtcTiming(void) {
     do {
         loop_count++;
         
+        // Limit loop count to 25,000 to prevent system slowdown with high capacitance
+        if (loop_count >= 25000) {
+            break;
+        }
+        
         // Check RTC every 5000 loops to avoid too many HBIOS calls but stay responsive
         if ((loop_count % 5000) == 0) {
             rtc_result = hbios_rtc_get_time(&current_time);
@@ -383,45 +582,63 @@ long measureRtcTiming(void) {
 // RTC Calibration using CPU clock as reference
 void calibrateRtc(void) {
     char key;
+    long expected_loops = 5000;  // Expected loops per second for properly calibrated RTC
     
     printStr("\r\n=== RTC Calibration Mode ===\r\n");
-    printStr("Using CPU clock as reference\r\n");
-    printStr("CPU Clock: 7,372,800 Hz\r\n\r\n");
-    
-    printStr("This measures RTC timing accuracy by counting\r\n");
-    printStr("CPU loops during one RTC second.\r\n\r\n");
+    printStr("CPU Clock: 7,372,800 Hz\r\n");
+    printStr("Expected loops per RTC second: ");
+    printLong(expected_loops);
+    printStr("\r\n\r\n");
     
     printStr("Instructions:\r\n");
-    printStr("- Positive % = RTC running FAST\r\n");
-    printStr("- Negative % = RTC running SLOW\r\n");
-    printStr("- 0.00% = RTC perfectly in sync\r\n");
+    printStr("- Measures RTC timing accuracy against CPU clock\r\n");
+    printStr("- Shows percentage deviation from expected timing\r\n");
+    printStr("- Adjust capacitor value to get close to 0.00%\r\n");
     printStr("- Press ESC to stop\r\n\r\n");
     
     printStr("Starting calibration...\r\n");
     
     // Calibration loop
     while (1) {
-        // Check for ESC key
+        // Check for ESC key first
         key = cRawIo();
         if (key == 27) {
             printStr("\r\nCalibration stopped.\r\n");
             break;
         }
         
-        printStr("\rMeasuring... ");
-        
         // Measure RTC timing
-        long pct_100 = measureRtcTiming();
+        long loop_count = measureRtcTiming();
         
-        if (pct_100 == 0x8000) {
-            printStr("\rError reading RTC          ");
+        if (loop_count == 0x8000) {
+            printStr("\rError reading RTC - retrying...        ");
             continue;
         }
         
-        // Display raw loop count for baseline calibration
-        printStr("\rLoop count: ");
-        printLong(pct_100);  // This is actually the loop count now
-        printStr(" loops/sec          ");
+        // Calculate deviation percentage
+        long diff = loop_count - expected_loops;
+        long pct_100 = (diff * 10000) / expected_loops;  // Percentage * 100 for 2 decimal places
+        
+        // Display the calibration result
+        printStr("\rRTC Calibration: ");
+        if (pct_100 > 0) {
+            printStr("FAST by ");
+        } else if (pct_100 < 0) {
+            printStr("SLOW by ");
+        } else {
+            printStr("IN SYNC ");
+        }
+        
+        if (pct_100 != 0) {
+            printPercentage(pct_100 < 0 ? -pct_100 : pct_100);
+        } else {
+            printStr("0.00%");
+        }
+        
+        printStr("    ");
+        
+        // Small delay to make it readable
+        for (int i = 0; i < 10000; i++) { /* brief pause */ }
     }
 }
 
@@ -454,8 +671,9 @@ void testRtc(void) {
 void showHelp(void) {
     printStr("\r\n=== RTC Calibration Utility Help ===\r\n");
     printStr("Commands:\r\n");
-    printStr("  T - Display current time\r\n");
-    printStr("  S - Set RTC time\r\n");
+    printStr("  S - Show current date/time\r\n");
+    printStr("  D - Set RTC date\r\n");
+    printStr("  T - Set RTC time (with arrow key adjustment, 10s increments)\r\n");
     printStr("  H - Hardware test\r\n");
     printStr("  C - Calibrate RTC speed\r\n");
     printStr("  ? - Show this help\r\n");
@@ -467,7 +685,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.3.1 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.5.0 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
@@ -486,7 +704,7 @@ void main(void) {
     // Main menu loop
     while (1) {
         printStr("\r\n--- Main Menu ---\r\n");
-    printStr("T)ime  S)et  H)ardware test  C)alibrate  ?)Help  Q)uit\r\n");
+        printStr("S)how Date/Time - Set D)ate / T)ime - H)ardware Test - C)alibrate - ?)Help - Q)uit\r\n");
         printStr("Command: ");
         
         // Wait for command
@@ -496,8 +714,8 @@ void main(void) {
         printStr("\r\n");
         
         switch (command) {
-            case 'T':
-            case 't':
+            case 'S':
+            case 's':
                 result = hbios_rtc_get_time(&datetime);
                 if (result == 0 || result == 0xB8) {
                     convertFromBcd(&datetime);
@@ -509,8 +727,13 @@ void main(void) {
                 }
                 break;
                 
-            case 'S':
-            case 's':
+            case 'D':
+            case 'd':
+                setDate();
+                break;
+                
+            case 'T':
+            case 't':
                 setTime();
                 break;
                 
