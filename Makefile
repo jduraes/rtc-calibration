@@ -1,58 +1,78 @@
-SHELL := /bin/bash
-.SHELLFLAGS := -eu -o pipefail -c
-.ONESHELL:
-MAKEFLAGS += --warn-undefined-variables
-MAKEFLAGS += --no-builtin-rules
+# Makefile for RTC Calibration Utility (HBIOS version)
+# For RC2014/RomWBW systems with HBIOS RTC support
 
-# Compiler setup for RC2014/CP/M
-Z88DK_PATH := /home/miguel/yellow-msx-series-for-rc2014/z88dk
-PATH := $(Z88DK_PATH)/bin:$(PATH)
-export PATH
-ZCC := zcc +cpm -compiler=sdcc -create-app
+# Compiler and tools
+ZCC = zcc
+TARGET = +cpm
+CFLAGS = -SO3 -compiler=sccz80
+LDFLAGS = 
+ASM = zcc
+ASMFLAGS = +cpm
 
-# Application name (8.3 format)
-APP := rtccalib
+# Target executable
+TARGET_NAME = rtccalib
 
 # Source files
-SOURCES := rtccalib.c ds1302.asm ds1302.h cpm.asm cpm.h
+C_SOURCES = rtccalib.c
+ASM_SOURCES = rtc.asm cpm.asm
+HEADERS = rtc.h cpm.h
 
-all: $(APP).com
+# Object files
+C_OBJECTS = $(C_SOURCES:.c=.o)
+ASM_OBJECTS = $(ASM_SOURCES:.asm=.o)
+OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS)
 
-$(APP).com: $(SOURCES)
-	$(ZCC) rtccalib.c ds1302.asm cpm.asm -o $(APP).com
-	@echo "Compiled $(APP).com successfully"
+# Default target
+all: $(TARGET_NAME).com
+	@echo "Compiled $(TARGET_NAME).com successfully"
 
+# Build the COM file
+$(TARGET_NAME).com: $(OBJECTS)
+	$(ZCC) $(TARGET) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJECTS)
+
+# Build compare test program
+compare.com: compare.o $(ASM_OBJECTS)
+	$(ZCC) $(TARGET) $(CFLAGS) $(LDFLAGS) -o $@ compare.o $(ASM_OBJECTS)
+
+# Compile C source files
+%.o: %.c $(HEADERS)
+	$(ZCC) $(TARGET) $(CFLAGS) -c $< -o $@
+
+# Assemble ASM source files
+%.o: %.asm
+	$(ASM) $(ASMFLAGS) -c $< -o $@
+
+# Clean build artifacts
 clean:
-	rm -f *.com *.o *.map *.lst *.sym
-	@echo "Cleaned build files"
+	rm -f *.o *.com *.map *.lst
+	echo "Cleaned build files"
 
-install: $(APP).com
-	@if [ -d "$(ROMWBW_APPS)" ]; then \
-		cp $(APP).com "$(ROMWBW_APPS)/"; \
-		echo "Installed $(APP).com to $(ROMWBW_APPS)"; \
+# Install to a common location (adjust path as needed)
+install: $(TARGET_NAME).com
+	@if [ -n "$(ROMWBW_APPS)" ]; then \
+		cp $(TARGET_NAME).com $(ROMWBW_APPS)/; \
+		echo "Installed to $(ROMWBW_APPS)"; \
 	else \
-		echo "ROMWBW_APPS directory not set or doesn't exist"; \
-		echo "Please copy $(APP).com to your RC2014 system manually"; \
+		echo "Set ROMWBW_APPS environment variable to install location"; \
 	fi
 
-test: $(APP).com
-	@echo "Built $(APP).com for RC2014"
-	@echo "Copy to your RC2014 system and run under CP/M"
+# Test the program (requires RC2014/RomWBW environment)
+test: $(TARGET_NAME).com
+	@echo "Testing $(TARGET_NAME).com requires RC2014/RomWBW environment"
+	@echo "Copy $(TARGET_NAME).com to your RC2014 system and run it"
 
+# Display help
 help:
-	@echo "RTC Calibration Utility Build System"
-	@echo "===================================="
-	@echo "Targets:"
-	@echo "  all      - Build $(APP).com (default)"
-	@echo "  clean    - Remove build files"
-	@echo "  install  - Copy to ROMWBW_APPS directory"
-	@echo "  test     - Build and show usage info"
-	@echo "  help     - Show this help"
+	@echo "RTC Calibration Utility (HBIOS) - Available targets:"
+	@echo "  all     - Build $(TARGET_NAME).com (default)"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  install - Copy program to ROMWBW_APPS/"
+	@echo "  test    - Show testing instructions"
+	@echo "  help    - Show this help"
 	@echo ""
 	@echo "Requirements:"
-	@echo "  - z88dk compiler suite"
-	@echo "  - Make"
-	@echo ""
-	@echo "For RC2014 with Ed Brindley's RTC Card Rev1"
+	@echo "  - z88dk toolchain"
+	@echo "  - RC2014 with RomWBW HBIOS"
+	@echo "  - RTC hardware supported by RomWBW"
 
 .PHONY: all clean install test help

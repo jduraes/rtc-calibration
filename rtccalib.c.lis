@@ -1,0 +1,2322 @@
+/tmp/tmpXXmqtM6n.asm:
+     1                          MODULE rtccalib_c
+     2                          LINE 0, "rtccalib.c"
+rtccalib.c:
+                                
+     1                          ;* * * * *  Small-C/Plus z88dk * * * * *
+     2                          ;  Version: 23727-77e00c6800-20250726
+     3                          ;
+     4                          ;	Reconstructed for z80 Module Assembler
+     5                          ;
+     6                          ;	Module compile time: Sun Jul 27 01:36:04 2025
+     7                          
+     8                          
+     9                          	C_LINE	0,"rtccalib.c"
+                                
+                                	MODULE	rtccalib_c
+                                
+                                
+                                	INCLUDE "z80_crt0.hdr"
+/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config/../../lib/z80_crt0.hdr:
+     1                          ;
+     2                          ;	Header file which contains all required variables from the
+     3                          ;	startup that need to be exposed to individual C files
+     4                          ;
+     5                          ;	Stick in this file any routines which are needed or implicitly
+     6                          ;	implied by sccz80.
+     7                          ;
+     8                          ;	This file is included by every module
+     9                          ;	To handle multi module programs which use floating point
+    10                          ;	routines in different modules, we have got rid of
+    11                          ;	the conditional assembly around the float routines
+    12                          
+    13                          
+    14                          	EXTERN	base_graphics	; Address of graphics screen
+    15                          
+    16                          	EXTERN	_cpfar2near	; Far->near conversion (z88)
+    17                          	EXTERN	packintrout	; Process interrupt (z88 apps)
+    18                          
+    19                          	EXTERN	l_dcal		; jp(hl)
+    20                          	EXTERN	cleanup		; cleanup before program exit
+    21                          
+    22                          	EXTERN	l_jphl		; another jp(hl)
+    23                          	EXTERN	l_jpix		; jp(ix)
+    24                          	EXTERN	l_jpiy		; jp(iy)
+    25                          
+    26                          	EXTERN	l_setix		; set non-z80 jp(ix) smc
+    27                          	EXTERN	l_setiy		; set non-z80 jp(iy) smc
+    28                          
+    29                          	EXTERN	l_ldi
+    30                          	EXTERN	l_ldi_128
+    31                          	EXTERN	l_ldi_256
+    32                          
+    33                          	EXTERN	l_outi
+    34                          	EXTERN	l_outi_128
+    35                          	EXTERN	l_outi_256
+    36                          
+    37                          	EXTERN	l_ini
+    38                          	EXTERN	l_ini_128
+    39                          	EXTERN	l_ini_256
+    40                          	EXTERN	l_ini_512
+    41                          
+    42                          	; Used for banked calls for __banked for sccz80 + sdcc
+    43                          	EXTERN	banked_call
+    44                          
+    45                          ;------------------------------------
+    46                          ; Scopes for integer library routines
+    47                          ;------------------------------------
+    48                          
+    49                          	EXTERN	l_getptr	;Get 3 byte pointer
+    50                          	EXTERN	l_putptr	;Put 3 byte pointer
+    51                          	EXTERN	l_gchar		;Get signed char
+    52                          	EXTERN	l_gchar1
+    53                          	EXTERN	l_gchar2
+    54                          	EXTERN	l_gchar3
+    55                          	EXTERN	l_gchar4
+    56                          	EXTERN	l_gchar5
+    57                          	EXTERN	l_gchar6
+    58                          	EXTERN	l_gchar7
+    59                          	EXTERN	l_gchar8
+    60                          	EXTERN	l_gcharsp	;Get signed char  (peephole opt)
+    61                          	EXTERN	l_gcharspsp	;Get signed char and push  (peephole opt)
+    62                          	EXTERN	l_g2charspsp	;Get 2 signed char and push  (peephole opt)
+    63                          	EXTERN	l_sxt		;Sign extend char
+    64                          	EXTERN	l_gint		;Get int ld hl,(hl)
+    65                          	EXTERN	l_gint1sp	;Optimized variants ld hl,x add hl,sp ld hl,(hl)
+    66                          	EXTERN	l_gint2sp
+    67                          	EXTERN	l_gint3sp
+    68                          	EXTERN	l_gint4sp
+    69                          	EXTERN	l_gint5sp
+    70                          	EXTERN	l_gint6sp
+    71                          	EXTERN	l_gint7sp
+    72                          	EXTERN	l_gint8sp
+    73                          	EXTERN	l_gint1		;Optimized variants inc hl,x ld hl,(hl)
+    74                          	EXTERN	l_gint2
+    75                          	EXTERN	l_gint3
+    76                          	EXTERN	l_gint4
+    77                          	EXTERN	l_gint5
+    78                          	EXTERN	l_gint6
+    79                          	EXTERN	l_gint7
+    80                          	EXTERN	l_gint8
+    81                          	EXTERN	l_gintsp	;Get int (peephole opt)
+    82                          	EXTERN	l_gintspchar	;Get int,char (peephole opt)
+    83                          	EXTERN	l_gintspsp	;Get int and push (peephole opt)
+    84                          	EXTERN	l_g2intspsp	;Get 2 int and push (peephole opt)
+    85                          	EXTERN	l_gintsp2de	;Get int, multiply by 2 and add from SP by de
+    86                          	EXTERN	l_gint7de	;Get int, multiply by 7 and add from SP by de
+    87                          	EXTERN	l_gint_eq	;Get int and test == 0
+    88                          	EXTERN	l_ghtonsint	;Get reverse order int
+    89                          	EXTERN	l_pint		;Put int: ld (de),hl
+    90                          	EXTERN	l_pint_eq	;Put int and test == 0
+    91                          	EXTERN	l_pint_pop	;Put int and pop place address
+    92                          	EXTERN	l_or		;Int logical or
+    93                          	EXTERN	l_xor		;Int logical xor
+    94                          	EXTERN	l_and		;Int logical and
+    95                          	EXTERN	l_eq		;Int equality de == hl
+    96                          	EXTERN	l_eq_hlbc	;Int equality bc == hl
+    97                          	EXTERN	l_ne		;Int inequality de != hl
+    98                          	EXTERN	l_ne_hlbc	;Int inequality bc != hl
+    99                          	EXTERN	l_gt		;Int signed de > hl
+   100                          	EXTERN	l_gt_hlbc	;Int signed bc > hl
+   101                          	EXTERN	l_le		;Int signed de <= hl
+   102                          	EXTERN	l_le_hlbc	;Int signed bc <= hl
+   103                          	EXTERN	l_ge		;Int signed de >= hl
+   104                          	EXTERN	l_ge_hlbc	;Int signed bc >= hl
+   105                          	EXTERN	l_lt		;Int signed de < hl
+   106                          	EXTERN	l_lt_hlbc	;Int signed bc < hl
+   107                          	EXTERN	l_uge		;Int unsigned de >= hl
+   108                          	EXTERN	l_uge_hlbc	;Int unsigned bc >= hl
+   109                          	EXTERN	l_ult		;Int unsigned de < hl
+   110                          	EXTERN	l_ult_hlbc	;Int unsigned bc < hl
+   111                          	EXTERN	l_ugt		;Int unsigned de > hl
+   112                          	EXTERN	l_ugt_hlbc	;Int unsigned bc > hl
+   113                          	EXTERN	l_ule		;Int unsigned de <= hl
+   114                          	EXTERN	l_ule_hlbc	;Int unsigned bc <= hl
+   115                          	EXTERN	l_cmp		;Int signed compare
+   116                          	EXTERN	l_ucmp		;Int unsigned compare
+   117                          	EXTERN	l_asr		;Int signed de >> hl
+   118                          	EXTERN	l_asr_hl_by_e	;Int signed hl >> e
+   119                          	EXTERN	l_asr_u		;Int unsigned de >> hl
+   120                          	EXTERN	l_asr_u_hl_by_e	;Int unsigned hl >> e
+   121                          	EXTERN	l_asl		;Int de << hl
+   122                          	EXTERN	l_sub		;Int subtract hl = de - hl
+   123                          	EXTERN	l_neg		;Int negate
+   124                          	EXTERN	l_com		;Int ~
+   125                          	EXTERN	l_lneg		;Int logical negate
+   126                          	EXTERN	l_bool		;Int boolean test
+   127                          	EXTERN	l_cm_de
+   128                          	EXTERN	l_cm_bc
+   129                          	EXTERN	l_deneg
+   130                          	EXTERN	l_bcneg
+   131                          	EXTERN	l_case		;Integer case
+   132                          	EXTERN	l_mult		;Integer hl = hl * de
+   133                          	EXTERN	l_mult_u	;Integer unsigned *
+   134                          	EXTERN	l_div		;Integer signed / hl=de/hl, de=de%hl
+   135                          	EXTERN	l_div_u		;Integer unsigned /
+   136                          	EXTERN	l_mod		;Integer % (for gbz80) hl=de%hl
+   137                          	EXTERN	l_mod_u		;Integer unsigned % (for gbz80)
+   138                          
+   139                          ;------------------
+   140                          ;Long functions now
+   141                          ;------------------
+   142                          
+   143                          	EXTERN	lpush2		;Push a long under the stack
+   144                          	EXTERN	l_int2long_s	;Int->long signed conversion
+   145                          	EXTERN	l_int2long_s_float	;Int->long->float signed conversion (optimizer: use -O3)
+   146                          	EXTERN	l_int2long_u_float	;uInt->ulong->float signed conversion
+   147                          	EXTERN	l_glong		;Get long
+   148                          	EXTERN	l_glongsp	;Get long (peephole opt)
+   149                          	EXTERN	l_glonghlp	;Get pointer, then get long
+   150                          	EXTERN	l_glong2sp	;Get long and copy on stack (peephole opt)
+   151                          	EXTERN	l_glong2sp_hlp
+   152                          	EXTERN	l_long_add
+   153                          	EXTERN	l_long_and
+   154                          	EXTERN	l_long_asl
+   155                          	EXTERN	l_long_asr
+   156                          	EXTERN	l_long_aslo	;Long << shift in c
+   157                          	EXTERN	l_long_asro	;Long >> shift in c (signed)
+   158                          	EXTERN	l_long_bool
+   159                          	EXTERN	l_long_cmp
+   160                          	EXTERN	l_long_com
+   161                          	EXTERN	l_long_eq
+   162                          	EXTERN	l_long_ge
+   163                          	EXTERN	l_long_gt
+   164                          	EXTERN	l_long_le
+   165                          	EXTERN	l_long_lneg
+   166                          	EXTERN	l_long_lt
+   167                          	EXTERN	l_long_ne
+   168                          	EXTERN	l_long_neg
+   169                          	EXTERN	l_long_or
+   170                          	EXTERN	l_long_sub
+   171                          	EXTERN	l_long_ucmp
+   172                          	EXTERN	l_long_uge
+   173                          	EXTERN	l_long_ugt
+   174                          	EXTERN	l_long_ule
+   175                          	EXTERN	l_long_ult
+   176                          	EXTERN	l_long_xor
+   177                          	EXTERN	l_plong
+   178                          	EXTERN	l_inclong	;Increment long
+   179                          	EXTERN	l_declong	;Decrement long
+   180                          	EXTERN	l_long_div
+   181                          	EXTERN	l_long_div_u
+   182                          	EXTERN	l_long_mod
+   183                          	EXTERN	l_long_mod_u
+   184                          	EXTERN	l_long_mult
+   185                          	EXTERN	l_long_mult_u
+   186                          	EXTERN	l_long_asr_u	;Long unsigned >>
+   187                          	EXTERN	l_long_asr_uo	;Long unsigned >> shift in c
+   188                          	EXTERN	l_long_case
+   189                          	EXTERN	l_long_inc_mhl
+   190                          
+   191                          ;--------------------------------------------------------------
+   192                          ; Floating point support routines, mostly in library
+   193                          ;--------------------------------------------------------------
+   194                          
+   195                          	EXTERN	dadd
+   196                          	EXTERN	ddiv
+   197                          	EXTERN	dsub
+   198                          	EXTERN	dmul
+   199                          
+   200                          	EXTERN	dge
+   201                          	EXTERN	dgt
+   202                          	EXTERN	dleq
+   203                          	EXTERN	dlt
+   204                          	EXTERN	deq
+   205                          	EXTERN	dne
+   206                          
+   207                          	EXTERN	minusfa		;FA=-FA
+   208                          
+   209                          	EXTERN	dswap		;Exchange FA with top of stack
+   210                          	EXTERN	float		;Convert int to float
+   211                          	EXTERN	ufloat		;unsigned int to float
+   212                          	EXTERN	ifix		;Convert float to int
+   213                          
+   214                          	EXTERN	dstore		;FA->(de)
+   215                          	EXTERN	dload		;FA<-(hl)
+   216                          	EXTERN	dldpsh		;(hl)->(stack)
+   217                          	EXTERN	dpush		;FA->(stack)
+   218                          	EXTERN	dpush2		;FA->(stack under)
+   219                          	EXTERN	dpush3		;FA->(stack under,long)
+   220                          
+   221                          	EXTERN	fa		;may not be needed in this file
+   222                          	EXTERN	extra		;ditto
+   223                          	EXTERN	__atof2		;string->fa conversion
+   224                          	EXTERN	l_f48_ldexp	;FA * pow2(N)
+   225                          	EXTERN	l_f48_f16tof	;Convert _Float16 to float
+   226                          	EXTERN	l_f48_ftof16	;Convert float to _Float16
+   227                              EXTERN  l_f48_sllong2f
+   228                              EXTERN  l_f48_ullong2f
+   229                              EXTERN  l_f48_f2sllong
+   230                              EXTERN  l_f48_f2ullong
+   231                          
+   232                          	; 16 bit float ABI
+   233                          	EXTERN	l_f16_add
+   234                          	EXTERN	l_f16_sub
+   235                          	EXTERN	l_f16_mul
+   236                          	EXTERN	l_f16_div
+   237                          	EXTERN	l_f16_le
+   238                          	EXTERN	l_f16_lt
+   239                          	EXTERN	l_f16_ge
+   240                          	EXTERN	l_f16_gt
+   241                          	EXTERN	l_f16_eq
+   242                          	EXTERN	l_f16_ne
+   243                          	EXTERN	l_f16_swap
+   244                          	EXTERN	l_f16_schar2f
+   245                          	EXTERN	l_f16_uchar2f
+   246                          	EXTERN	l_f16_sint2f
+   247                          	EXTERN	l_f16_uint2f
+   248                          	EXTERN	l_f16_slong2f
+   249                          	EXTERN	l_f16_ulong2f
+   250                          	EXTERN	l_f16_f2sint
+   251                          	EXTERN	l_f16_f2uint
+   252                          	EXTERN	l_f16_f2slong
+   253                          	EXTERN	l_f16_f2ulong
+   254                          	EXTERN	l_f16_ldexp
+   255                          	EXTERN	l_f16_invf	;Only for ieee16
+   256                          	EXTERN	l_f16_f16tof	;A noop
+   257                          	EXTERN	l_f16_ftof16	;A noop
+   258                          
+   259                          	; 32 bit float ABI
+   260                          	EXTERN	l_f32_add
+   261                          	EXTERN	l_f32_sub
+   262                          	EXTERN	l_f32_mul
+   263                          	EXTERN	l_f32_div
+   264                          	EXTERN	l_f32_le
+   265                          	EXTERN	l_f32_lt
+   266                          	EXTERN	l_f32_ge
+   267                          	EXTERN	l_f32_gt
+   268                          	EXTERN	l_f32_eq
+   269                          	EXTERN	l_f32_ne
+   270                          	EXTERN	l_f32_swap
+   271                          	EXTERN	l_f32_negate
+   272                          	EXTERN	l_f32_schar2f
+   273                          	EXTERN	l_f32_uchar2f
+   274                          	EXTERN	l_f32_sint2f
+   275                          	EXTERN	l_f32_uint2f
+   276                          	EXTERN	l_f32_slong2f
+   277                          	EXTERN	l_f32_ulong2f
+   278                          	EXTERN	l_f32_f2sint
+   279                          	EXTERN	l_f32_f2uint
+   280                          	EXTERN	l_f32_f2slong
+   281                          	EXTERN	l_f32_f2ulong
+   282                          	EXTERN	l_f32_ldexp
+   283                          	EXTERN	l_f32_invf	;Only for math32
+   284                          	EXTERN	l_f32_f16tof	;Convert _Float16 to float
+   285                          	EXTERN	l_f32_ftof16	;Convert float to _Float16
+   286                          
+   287                          	; 64 bit float ABI
+   288                          	EXTERN	l_f64_load
+   289                          	EXTERN	l_f64_add
+   290                          	EXTERN	l_f64_sub
+   291                          	EXTERN	l_f64_mul
+   292                          	EXTERN	l_f64_div
+   293                          	EXTERN	l_f64_le
+   294                          	EXTERN	l_f64_lt
+   295                          	EXTERN	l_f64_ge
+   296                          	EXTERN	l_f64_gt
+   297                          	EXTERN	l_f64_eq
+   298                          	EXTERN	l_f64_ne
+   299                          	EXTERN	l_f64_negate
+   300                          	EXTERN	l_f64_swap
+   301                          	EXTERN	l_f64_store
+   302                          	EXTERN	l_f64_dpush
+   303                          	EXTERN	l_f64_dldpsh
+   304                          	EXTERN	l_f64_dpush2
+   305                          	EXTERN	l_f64_dpush3
+   306                          	EXTERN	l_f64_schar2f
+   307                          	EXTERN	l_f64_uchar2f
+   308                          	EXTERN	l_f64_sint2f
+   309                          	EXTERN	l_f64_uint2f
+   310                          	EXTERN	l_f64_slong2f
+   311                          	EXTERN	l_f64_ulong2f
+   312                          	EXTERN	l_f64_f2sint
+   313                          	EXTERN	l_f64_f2uint
+   314                          	EXTERN	l_f64_f2slong
+   315                          	EXTERN	l_f64_f2ulong
+   316                          	EXTERN	l_f64_ldexp
+   317                          	EXTERN	l_f64_f16tof	;Convert _Float16 to float
+   318                          	EXTERN	l_f64_ftof16	;Convert float to _Float16
+   319                          
+   320                          
+   321                          ;--------------------------------------------------
+   322                          ; Routines for picking up variables from far memory
+   323                          ;--------------------------------------------------
+   324                          
+   325                          	EXTERN	lp_gchar
+   326                          	EXTERN	lp_guchar
+   327                          	EXTERN	lp_gdoub
+   328                          	EXTERN	lp_gint
+   329                          	EXTERN	lp_glong
+   330                          	EXTERN	lp_gptr
+   331                          	EXTERN	lp_pchar
+   332                          	EXTERN	lp_pdoub
+   333                          	EXTERN	lp_pint
+   334                          	EXTERN	lp_plong
+   335                          	EXTERN	lp_pptr
+   336                          
+   337                          	EXTERN	l_farcall	; Long call
+   338                          	EXTERN  l_far_mapaddr	; Map __banked to __far
+   339                          
+   340                          ;--------------------------------------------------
+   341                          ; Routines for handling 16 bit fixed point for sccz80
+   342                          ;--------------------------------------------------
+   343                          
+   344                          	EXTERN	l_f16_fix16tof
+   345                          	EXTERN	l_f16_ftofix16
+   346                          	EXTERN	l_f32_fix16tof
+   347                          	EXTERN	l_f32_ftofix16
+   348                          	EXTERN	l_f48_fix16tof
+   349                              EXTERN  l_f48_ftofix16s
+   350                          	EXTERN	l_f48_ftofix16
+   351                          	EXTERN	l_f64_fix16tof
+   352                          	EXTERN	l_f64_ftofix16
+   353                          	EXTERN	l_fix16_divu
+   354                          	EXTERN	l_fix16_divs
+   355                          	EXTERN	l_fix16_f2sint
+   356                          	EXTERN	l_fix16_f2slong
+   357                          	EXTERN	l_fix16_f2uint
+   358                          	EXTERN	l_fix16_f2ulong
+   359                              EXTERN  l_fix16_uchar2f
+   360                              EXTERN  l_fix16_uint2f
+   361                              EXTERN  l_fix16_ulong2f
+   362                              EXTERN  l_fix16_schar2f
+   363                              EXTERN  l_fix16_sint2f
+   364                              EXTERN  l_fix16_slong2f
+   365                          	EXTERN	l_fix16_inv
+   366                          	EXTERN	l_fix16_mul
+   367                          	EXTERN	l_fix16_mulu
+   368                          	EXTERN	l_fix16_muls
+   369                          	EXTERN	l_fix16_negate
+   370                          
+   371                          ;--------------------------------------------------
+   372                          ; Routines for handling 64 bit integers for sccz80
+   373                          ;--------------------------------------------------
+   374                          
+   375                          	EXTERN	__i64_acc
+   376                          	EXTERN	l_i64_load
+   377                          	EXTERN	l_i64_store
+   378                          	EXTERN	l_i64_push
+   379                          	EXTERN	l_i64_add
+   380                          	EXTERN	l_i64_sub
+   381                          	EXTERN	l_i64_mult
+   382                          	EXTERN	l_i64_mult_u
+   383                          	EXTERN	l_i64_mod
+   384                          	EXTERN	l_i64_mod_u
+   385                          	EXTERN	l_i64_div
+   386                          	EXTERN	l_i64_div_u
+   387                          	EXTERN	l_i64_or
+   388                          	EXTERN	l_i64_xor
+   389                          	EXTERN	l_i64_and
+   390                          	EXTERN	l_i64_asr_u
+   391                          	EXTERN	l_i64_asr_uo
+   392                          	EXTERN	l_i64_asr
+   393                          	EXTERN	l_i64_asro
+   394                          	EXTERN	l_i64_asl
+   395                          	EXTERN	l_i64_aslo
+   396                          	EXTERN	l_i64_inc
+   397                          	EXTERN	l_i64_dec
+   398                          	EXTERN	l_i64_eq0
+   399                          	EXTERN	l_i64_eq
+   400                          	EXTERN	l_i64_ne
+   401                          	EXTERN	l_i64_ge
+   402                          	EXTERN	l_i64_gt
+   403                          	EXTERN	l_i64_uge
+   404                          	EXTERN	l_i64_ugt
+   405                          	EXTERN	l_i64_le
+   406                          	EXTERN	l_i64_lt
+   407                          	EXTERN	l_i64_ule
+   408                          	EXTERN	l_i64_ult
+   409                          	EXTERN	l_i64_lneg
+   410                          	EXTERN	l_i64_neg
+   411                          	EXTERN	l_i64_com
+   412                          	EXTERN	l_i64_case
+   413                          	EXTERN	l_i64_push_under_int
+   414                          	EXTERN	l_i64_push_under_int_mhl
+   415                          	EXTERN	l_i64_copy
+   416                          	EXTERN	l_i64_slong2i64
+   417                          	EXTERN	l_i64_ulong2i64
+   418                          	EXTERN	l_i64_sint2i64
+   419                          	EXTERN	l_i64_uint2i64
+   420                          	EXTERN	l_i64_u64_toi32
+   421                          	EXTERN	l_i64_s64_toi32
+   422                          
+   423                          
+   424                          ;-------------------
+   425                          ; Routines for SDCC
+   426                          ;-------------------
+   427                          
+   428                          	EXTERN	__divsint_rrx_s
+   429                          	EXTERN	__divsint_rrx_hds
+   430                          	EXTERN	__divuint_rrx_s
+   431                          	EXTERN	__divuint_rrx_hds
+   432                          	EXTERN	__divsuchar_rrx_s
+   433                          	EXTERN	__divuschar_rrx_s
+   434                          	EXTERN	__divuchar_rrx_s
+   435                          	EXTERN	__divuchar_rrx_hds
+   436                          	EXTERN	__moduchar_rrx_s
+   437                          	EXTERN	__moduchar_rrx_hds
+   438                          	EXTERN	__moduschar_rrx_s
+   439                          	EXTERN	__modsuchar_rrx_s
+   440                          	EXTERN	__modschar_rrx_s
+   441                          	EXTERN	__modschar_rrx_hds
+   442                          	EXTERN	__modsint_rrx_s
+   443                          	EXTERN	__modsint_rrx_hds
+   444                          	EXTERN	__moduint_rrx_s
+   445                          	EXTERN	__moduint_rrx_hds
+   446                          	EXTERN	__get_remainder
+   447                          	EXTERN	__divunsigned
+   448                          	EXTERN	__div_signexte
+   449                          	EXTERN	__divu16
+   450                          	EXTERN	__div16
+   451                          	EXTERN	__div8
+   452                          	EXTERN	__muluchar_rrx_s
+   453                          	EXTERN	__muluchar_rrx_hds
+   454                          	EXTERN	__mulsuchar_rrx_s
+   455                          	EXTERN	__muluschar_rrx_s
+   456                          	EXTERN	__mulschar_rrx_s
+   457                          	EXTERN	__mulschar_rrx_hds
+   458                          	EXTERN	__mulint_rrx_s
+   459                          	EXTERN	__mulint_rrx_hds
+   460                          	EXTERN	__mul16
+   461                          	EXTERN	__rrulong_rrx_s
+   462                          	EXTERN	__rrslong_rrx_s
+   463                          	EXTERN	__rlslong_rrx_s
+   464                          	EXTERN	__rlulong_rrx_s
+   465                          	EXTERN	__muluchar
+   466                          	EXTERN	__mulschar
+   467                          
+   468                          	EXTERN	l_push_di
+   469                          	EXTERN	l_pop_ei
+   470                          
+   471                          	EXTERN	l_debug_push_frame
+   472                          	EXTERN	l_debug_pop_frame
+   473                          
+rtccalib.c:
+                                
+                                
+                                	C_LINE	0,"cpm.h"
+cpm.h:
+                                	C_LINE	4,"cpm.h"
+     4                          	C_LINE	1,"rtccalib.c"
+rtccalib.c:
+     1                          	C_LINE	0,"rtc.h"
+rtc.h:
+                                	C_LINE	0,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h:
+                                	C_LINE	8,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+     8                          	C_LINE	9,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+     9                          	C_LINE	10,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    10                          	C_LINE	12,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    12                          	C_LINE	13,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    13                          	C_LINE	14,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    14                          	C_LINE	16,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    16                          	C_LINE	17,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    17                          	C_LINE	18,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    18                          	C_LINE	20,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    20                          	C_LINE	21,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    21                          	C_LINE	22,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    22                          	C_LINE	24,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    24                          	C_LINE	25,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    25                          	C_LINE	26,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    26                          	C_LINE	28,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    28                          	C_LINE	29,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    29                          	C_LINE	30,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    30                          	C_LINE	60,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    60                          	C_LINE	61,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    61                          	C_LINE	63,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    63                          	C_LINE	64,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    64                          	C_LINE	66,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    66                          	C_LINE	67,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    67                          	C_LINE	73,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    73                          	C_LINE	76,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    76                          	C_LINE	94,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    94                          	C_LINE	95,"/home/miguel/yellow-msx-series-for-rc2014/z88dk/lib/config//../..//include/_DEVELOPMENT/sccz80/stdint.h"
+    95                          	C_LINE	4,"rtc.h"
+rtc.h:
+     4                          	C_LINE	7,"rtc.h"
+     7                          	C_LINE	17,"rtc.h"
+    17                          	C_LINE	18,"rtc.h"
+    18                          	C_LINE	19,"rtc.h"
+    19                          	C_LINE	20,"rtc.h"
+    20                          	C_LINE	2,"rtccalib.c"
+rtccalib.c:
+     2                          	C_LINE	5,"rtccalib.c"
+     5                          	SECTION	code_compiler
+     5                          
+     5                          ; Function putchar flags 0x00000200 __smallc
+     5                          ; int putchar(int c)
+     5                          ; parameter 'int c' at sp+2 size(2)
+     5                          	C_LINE	5,"rtccalib.c::putchar::0::0"
+rtccalib.c::putchar::0::0:
+     5                          ._putchar
+     5  0000  0e02                      ld c, 2
+     5  0002  5f                        ld e, a
+     5  0003  cd0500                    call 5
+     5  0006  c1                	pop	bc
+     5  0007  e1                	pop	hl
+     5  0008  e5                	push	hl
+     5  0009  c5                	push	bc
+     5  000a  c9                	ret
+     5                          
+     5                          
+     5                          	C_LINE	15,"rtccalib.c::putchar::0::1"
+rtccalib.c::putchar::0::1:
+    15                          
+    15                          ; Function bcdToDecimal flags 0x00000200 __smallc
+    15                          ; unsigned char bcdToDecimal(unsigned char bcd)
+    15                          ; parameter 'unsigned char bcd' at sp+2 size(1)
+    15                          	C_LINE	15,"rtccalib.c::bcdToDecimal::0::1"
+rtccalib.c::bcdToDecimal::0::1:
+    15                          ._bcdToDecimal
+    15  000b  210200            	ld	hl,2	;const
+    15  000e  39                	add	hl,sp
+    15  000f  7e                	ld	a,(hl)
+    15  0010  e6f0              	and	240
+    15  0012  6f                	ld	l,a
+    15  0013  2600              	ld	h,0
+    15  0015  0f                	rrca
+    15  0016  0f                	rrca
+    15  0017  0f                	rrca
+    15  0018  0f                	rrca
+    15  0019  e60f              	and	15
+    15  001b  6f                	ld	l,a
+    15  001c  2600              	ld	h,0
+    15  001e  3b                	dec	sp
+    15  001f  7d                	ld	a,l
+    15  0020  e1                	pop	hl
+    15  0021  6f                	ld	l,a
+    15  0022  e5                	push	hl
+    15  0023  210300            	ld	hl,3	;const
+    15  0026  39                	add	hl,sp
+    15  0027  7e                	ld	a,(hl)
+    15  0028  e60f              	and	15
+    15  002a  6f                	ld	l,a
+    15  002b  2600              	ld	h,0
+    15  002d  3b                	dec	sp
+    15  002e  7d                	ld	a,l
+    15  002f  e1                	pop	hl
+    15  0030  6f                	ld	l,a
+    15  0031  e5                	push	hl
+    15  0032  6c                	ld	l,h
+    15  0033  2600              	ld	h,0
+    15  0035  3e09              	ld	a,9
+    15  0037  95                	sub	l
+    15  0038  da4300            	jp	c,i_3	;
+    15  003b  e1                	pop	hl
+    15  003c  e5                	push	hl
+    15  003d  3e09              	ld	a,9
+    15  003f  95                	sub	l
+    15  0040  d24800            	jp	nc,i_2	;
+    15                          .i_3
+    15  0043  210000            	ld	hl,0	;const
+    15  0046  c1                	pop	bc
+    15  0047  c9                	ret
+    15                          
+    15                          
+    15                          .i_2
+    15  0048  e1                	pop	hl
+    15  0049  e5                	push	hl
+    15  004a  6c                	ld	l,h
+    15  004b  2600              	ld	h,0
+    15  004d  44                	ld	b,h
+    15  004e  4d                	ld	c,l
+    15  004f  29                	add	hl,hl
+    15  0050  29                	add	hl,hl
+    15  0051  09                	add	hl,bc
+    15  0052  29                	add	hl,hl
+    15  0053  eb                	ex	de,hl
+    15  0054  e1                	pop	hl
+    15  0055  e5                	push	hl
+    15  0056  2600              	ld	h,0
+    15  0058  19                	add	hl,de
+    15  0059  2600              	ld	h,0
+    15  005b  c1                	pop	bc
+    15  005c  c9                	ret
+    15                          
+    15                          
+    15                          	C_LINE	23,"rtccalib.c::bcdToDecimal::0::2"
+rtccalib.c::bcdToDecimal::0::2:
+    23                          
+    23                          ; Function decimalToBcd flags 0x00000200 __smallc
+    23                          ; unsigned char decimalToBcd(unsigned char decimal)
+    23                          ; parameter 'unsigned char decimal' at sp+2 size(1)
+    23                          	C_LINE	23,"rtccalib.c::decimalToBcd::0::2"
+rtccalib.c::decimalToBcd::0::2:
+    23                          ._decimalToBcd
+    23  005d  210200            	ld	hl,2	;const
+    23  0060  39                	add	hl,sp
+    23  0061  3e63              	ld	a,99
+    23  0063  96                	sub	(hl)
+    23  0064  d26d00            	jp	nc,i_5	;
+    23  0067  210200            	ld	hl,2	;const
+    23  006a  39                	add	hl,sp
+    23  006b  3663              	ld	(hl),99
+    23                          .i_5
+    23  006d  210200            	ld	hl,2	;const
+    23  0070  39                	add	hl,sp
+    23  0071  5e                	ld	e,(hl)
+    23  0072  1600              	ld	d,0
+    23  0074  210a00            	ld	hl,10	;const
+    23  0077  cd0000            	call	l_div_u
+    23  007a  2600              	ld	h,0
+    23  007c  3b                	dec	sp
+    23  007d  7d                	ld	a,l
+    23  007e  e1                	pop	hl
+    23  007f  6f                	ld	l,a
+    23  0080  e5                	push	hl
+    23  0081  210300            	ld	hl,3	;const
+    23  0084  39                	add	hl,sp
+    23  0085  5e                	ld	e,(hl)
+    23  0086  1600              	ld	d,0
+    23  0088  210a00            	ld	hl,10	;const
+    23  008b  cd0000            	call	l_div_u
+    23  008e  eb                	ex	de,hl
+    23  008f  2600              	ld	h,0
+    23  0091  3b                	dec	sp
+    23  0092  7d                	ld	a,l
+    23  0093  e1                	pop	hl
+    23  0094  6f                	ld	l,a
+    23  0095  e5                	push	hl
+    23  0096  6c                	ld	l,h
+    23  0097  2600              	ld	h,0
+    23  0099  29                	add	hl,hl
+    23  009a  29                	add	hl,hl
+    23  009b  29                	add	hl,hl
+    23  009c  29                	add	hl,hl
+    23  009d  eb                	ex	de,hl
+    23  009e  e1                	pop	hl
+    23  009f  e5                	push	hl
+    23  00a0  2600              	ld	h,0
+    23  00a2  cd0000            	call	l_or
+    23  00a5  2600              	ld	h,0
+    23  00a7  c1                	pop	bc
+    23  00a8  c9                	ret
+    23                          
+    23                          
+    23                          	C_LINE	31,"rtccalib.c::decimalToBcd::0::3"
+rtccalib.c::decimalToBcd::0::3:
+    31                          
+    31                          ; Function convertFromBcd flags 0x00000200 __smallc
+    31                          ; void convertFromBcd(struct 0__anonstruct_7_0 RTC_Time* datetime)
+    31                          ; parameter 'struct 0__anonstruct_7_0 RTC_Time* datetime' at sp+2 size(2)
+    31                          	C_LINE	31,"rtccalib.c::convertFromBcd::0::3"
+rtccalib.c::convertFromBcd::0::3:
+    31                          ._convertFromBcd
+    31  00a9  c1                	pop	bc
+    31  00aa  e1                	pop	hl
+    31  00ab  e5                	push	hl
+    31  00ac  c5                	push	bc
+    31  00ad  e5                	push	hl
+    31  00ae  6e                	ld	l,(hl)
+    31  00af  2600              	ld	h,0
+    31  00b1  e5                	push	hl
+    31  00b2  cd0b00            	call	_bcdToDecimal
+    31  00b5  c1                	pop	bc
+    31  00b6  d1                	pop	de
+    31  00b7  7d                	ld	a,l
+    31  00b8  12                	ld	(de),a
+    31  00b9  c1                	pop	bc
+    31  00ba  e1                	pop	hl
+    31  00bb  e5                	push	hl
+    31  00bc  c5                	push	bc
+    31  00bd  23                	inc	hl
+    31  00be  e5                	push	hl
+    31  00bf  cd0000            	call	l_gint4sp	;
+    31  00c2  23                	inc	hl
+    31  00c3  6e                	ld	l,(hl)
+    31  00c4  2600              	ld	h,0
+    31  00c6  e5                	push	hl
+    31  00c7  cd0b00            	call	_bcdToDecimal
+    31  00ca  c1                	pop	bc
+    31  00cb  d1                	pop	de
+    31  00cc  7d                	ld	a,l
+    31  00cd  12                	ld	(de),a
+    31  00ce  c1                	pop	bc
+    31  00cf  e1                	pop	hl
+    31  00d0  e5                	push	hl
+    31  00d1  c5                	push	bc
+    31  00d2  23                	inc	hl
+    31  00d3  23                	inc	hl
+    31  00d4  e5                	push	hl
+    31  00d5  cd0000            	call	l_gint4sp	;
+    31  00d8  23                	inc	hl
+    31  00d9  23                	inc	hl
+    31  00da  6e                	ld	l,(hl)
+    31  00db  2600              	ld	h,0
+    31  00dd  e5                	push	hl
+    31  00de  cd0b00            	call	_bcdToDecimal
+    31  00e1  c1                	pop	bc
+    31  00e2  d1                	pop	de
+    31  00e3  7d                	ld	a,l
+    31  00e4  12                	ld	(de),a
+    31  00e5  c1                	pop	bc
+    31  00e6  e1                	pop	hl
+    31  00e7  e5                	push	hl
+    31  00e8  c5                	push	bc
+    31  00e9  23                	inc	hl
+    31  00ea  23                	inc	hl
+    31  00eb  23                	inc	hl
+    31  00ec  e5                	push	hl
+    31  00ed  cd0000            	call	l_gint4sp	;
+    31  00f0  23                	inc	hl
+    31  00f1  23                	inc	hl
+    31  00f2  23                	inc	hl
+    31  00f3  6e                	ld	l,(hl)
+    31  00f4  2600              	ld	h,0
+    31  00f6  e5                	push	hl
+    31  00f7  cd0b00            	call	_bcdToDecimal
+    31  00fa  c1                	pop	bc
+    31  00fb  d1                	pop	de
+    31  00fc  7d                	ld	a,l
+    31  00fd  12                	ld	(de),a
+    31  00fe  c1                	pop	bc
+    31  00ff  e1                	pop	hl
+    31  0100  e5                	push	hl
+    31  0101  c5                	push	bc
+    31  0102  010400            	ld	bc,4
+    31  0105  09                	add	hl,bc
+    31  0106  e5                	push	hl
+    31  0107  cd0000            	call	l_gint4sp	;
+    31  010a  010400            	ld	bc,4
+    31  010d  09                	add	hl,bc
+    31  010e  6e                	ld	l,(hl)
+    31  010f  2600              	ld	h,0
+    31  0111  e5                	push	hl
+    31  0112  cd0b00            	call	_bcdToDecimal
+    31  0115  c1                	pop	bc
+    31  0116  d1                	pop	de
+    31  0117  7d                	ld	a,l
+    31  0118  12                	ld	(de),a
+    31  0119  c1                	pop	bc
+    31  011a  e1                	pop	hl
+    31  011b  e5                	push	hl
+    31  011c  c5                	push	bc
+    31  011d  010500            	ld	bc,5
+    31  0120  09                	add	hl,bc
+    31  0121  e5                	push	hl
+    31  0122  cd0000            	call	l_gint4sp	;
+    31  0125  010500            	ld	bc,5
+    31  0128  09                	add	hl,bc
+    31  0129  6e                	ld	l,(hl)
+    31  012a  2600              	ld	h,0
+    31  012c  e5                	push	hl
+    31  012d  cd0b00            	call	_bcdToDecimal
+    31  0130  c1                	pop	bc
+    31  0131  d1                	pop	de
+    31  0132  7d                	ld	a,l
+    31  0133  12                	ld	(de),a
+    31  0134  c9                	ret
+    31                          
+    31                          
+    31                          	C_LINE	41,"rtccalib.c::convertFromBcd::0::4"
+rtccalib.c::convertFromBcd::0::4:
+    41                          
+    41                          ; Function convertToBcd flags 0x00000200 __smallc
+    41                          ; void convertToBcd(struct 0__anonstruct_7_0 RTC_Time* datetime)
+    41                          ; parameter 'struct 0__anonstruct_7_0 RTC_Time* datetime' at sp+2 size(2)
+    41                          	C_LINE	41,"rtccalib.c::convertToBcd::0::4"
+rtccalib.c::convertToBcd::0::4:
+    41                          ._convertToBcd
+    41  0135  c1                	pop	bc
+    41  0136  e1                	pop	hl
+    41  0137  e5                	push	hl
+    41  0138  c5                	push	bc
+    41  0139  e5                	push	hl
+    41  013a  6e                	ld	l,(hl)
+    41  013b  2600              	ld	h,0
+    41  013d  e5                	push	hl
+    41  013e  cd5d00            	call	_decimalToBcd
+    41  0141  c1                	pop	bc
+    41  0142  d1                	pop	de
+    41  0143  7d                	ld	a,l
+    41  0144  12                	ld	(de),a
+    41  0145  c1                	pop	bc
+    41  0146  e1                	pop	hl
+    41  0147  e5                	push	hl
+    41  0148  c5                	push	bc
+    41  0149  23                	inc	hl
+    41  014a  e5                	push	hl
+    41  014b  cd0000            	call	l_gint4sp	;
+    41  014e  23                	inc	hl
+    41  014f  6e                	ld	l,(hl)
+    41  0150  2600              	ld	h,0
+    41  0152  e5                	push	hl
+    41  0153  cd5d00            	call	_decimalToBcd
+    41  0156  c1                	pop	bc
+    41  0157  d1                	pop	de
+    41  0158  7d                	ld	a,l
+    41  0159  12                	ld	(de),a
+    41  015a  c1                	pop	bc
+    41  015b  e1                	pop	hl
+    41  015c  e5                	push	hl
+    41  015d  c5                	push	bc
+    41  015e  23                	inc	hl
+    41  015f  23                	inc	hl
+    41  0160  e5                	push	hl
+    41  0161  cd0000            	call	l_gint4sp	;
+    41  0164  23                	inc	hl
+    41  0165  23                	inc	hl
+    41  0166  6e                	ld	l,(hl)
+    41  0167  2600              	ld	h,0
+    41  0169  e5                	push	hl
+    41  016a  cd5d00            	call	_decimalToBcd
+    41  016d  c1                	pop	bc
+    41  016e  d1                	pop	de
+    41  016f  7d                	ld	a,l
+    41  0170  12                	ld	(de),a
+    41  0171  c1                	pop	bc
+    41  0172  e1                	pop	hl
+    41  0173  e5                	push	hl
+    41  0174  c5                	push	bc
+    41  0175  23                	inc	hl
+    41  0176  23                	inc	hl
+    41  0177  23                	inc	hl
+    41  0178  e5                	push	hl
+    41  0179  cd0000            	call	l_gint4sp	;
+    41  017c  23                	inc	hl
+    41  017d  23                	inc	hl
+    41  017e  23                	inc	hl
+    41  017f  6e                	ld	l,(hl)
+    41  0180  2600              	ld	h,0
+    41  0182  e5                	push	hl
+    41  0183  cd5d00            	call	_decimalToBcd
+    41  0186  c1                	pop	bc
+    41  0187  d1                	pop	de
+    41  0188  7d                	ld	a,l
+    41  0189  12                	ld	(de),a
+    41  018a  c1                	pop	bc
+    41  018b  e1                	pop	hl
+    41  018c  e5                	push	hl
+    41  018d  c5                	push	bc
+    41  018e  010400            	ld	bc,4
+    41  0191  09                	add	hl,bc
+    41  0192  e5                	push	hl
+    41  0193  cd0000            	call	l_gint4sp	;
+    41  0196  010400            	ld	bc,4
+    41  0199  09                	add	hl,bc
+    41  019a  6e                	ld	l,(hl)
+    41  019b  2600              	ld	h,0
+    41  019d  e5                	push	hl
+    41  019e  cd5d00            	call	_decimalToBcd
+    41  01a1  c1                	pop	bc
+    41  01a2  d1                	pop	de
+    41  01a3  7d                	ld	a,l
+    41  01a4  12                	ld	(de),a
+    41  01a5  c1                	pop	bc
+    41  01a6  e1                	pop	hl
+    41  01a7  e5                	push	hl
+    41  01a8  c5                	push	bc
+    41  01a9  010500            	ld	bc,5
+    41  01ac  09                	add	hl,bc
+    41  01ad  e5                	push	hl
+    41  01ae  cd0000            	call	l_gint4sp	;
+    41  01b1  010500            	ld	bc,5
+    41  01b4  09                	add	hl,bc
+    41  01b5  6e                	ld	l,(hl)
+    41  01b6  2600              	ld	h,0
+    41  01b8  e5                	push	hl
+    41  01b9  cd5d00            	call	_decimalToBcd
+    41  01bc  c1                	pop	bc
+    41  01bd  d1                	pop	de
+    41  01be  7d                	ld	a,l
+    41  01bf  12                	ld	(de),a
+    41  01c0  c9                	ret
+    41                          
+    41                          
+    41                          	C_LINE	50,"rtccalib.c::convertToBcd::0::5"
+rtccalib.c::convertToBcd::0::5:
+    50                          	C_LINE	53,"rtccalib.c::convertToBcd::0::5"
+    53                          
+    53                          ; Function printStr flags 0x00000200 __smallc
+    53                          ; void printStr(char * str)
+    53                          ; parameter 'char * str' at sp+2 size(2)
+    53                          	C_LINE	53,"rtccalib.c::printStr::0::5"
+rtccalib.c::printStr::0::5:
+    53                          ._printStr
+    53                          .i_6
+    53  01c1  c1                	pop	bc
+    53  01c2  e1                	pop	hl
+    53  01c3  e5                	push	hl
+    53  01c4  c5                	push	bc
+    53  01c5  7e                	ld	a,(hl)
+    53  01c6  a7                	and	a
+    53  01c7  c8                	ret	z
+    53  01c8  d1                	pop	de
+    53  01c9  e1                	pop	hl
+    53  01ca  23                	inc	hl
+    53  01cb  e5                	push	hl
+    53  01cc  d5                	push	de
+    53  01cd  2b                	dec	hl
+    53  01ce  cd0000            	call	l_gchar
+    53  01d1  e5                	push	hl
+    53  01d2  cd0000            	call	_putchar
+    53  01d5  c1                	pop	bc
+    53  01d6  c3c101            	jp	i_6	;EOS
+    53                          .i_7
+    53  01d9  c9                	ret
+    53                          
+    53                          
+    53                          	C_LINE	59,"rtccalib.c::printStr::0::7"
+rtccalib.c::printStr::0::7:
+    59                          
+    59                          ; Function printChar flags 0x00000200 __smallc
+    59                          ; void printChar(char ch)
+    59                          ; parameter 'char ch' at sp+2 size(1)
+    59                          	C_LINE	59,"rtccalib.c::printChar::0::7"
+rtccalib.c::printChar::0::7:
+    59                          ._printChar
+    59  01da  210200            	ld	hl,2	;const
+    59  01dd  39                	add	hl,sp
+    59  01de  cd0000            	call	l_gchar
+    59  01e1  e5                	push	hl
+    59  01e2  cd0000            	call	_putchar
+    59  01e5  c1                	pop	bc
+    59  01e6  c9                	ret
+    59                          
+    59                          
+    59                          	C_LINE	63,"rtccalib.c::printChar::0::8"
+rtccalib.c::printChar::0::8:
+    63                          
+    63                          ; Function printNum flags 0x00000200 __smallc
+    63                          ; void printNum(unsigned char num)
+    63                          ; parameter 'unsigned char num' at sp+2 size(1)
+    63                          	C_LINE	63,"rtccalib.c::printNum::0::8"
+rtccalib.c::printNum::0::8:
+    63                          ._printNum
+    63  01e7  210200            	ld	hl,2	;const
+    63  01ea  39                	add	hl,sp
+    63  01eb  6e                	ld	l,(hl)
+    63  01ec  2600              	ld	h,0
+    63  01ee  7d                	ld	a,l
+    63  01ef  d60a              	sub	10
+    63  01f1  3f                	ccf
+    63  01f2  d20f02            	jp	nc,i_8	;
+    63  01f5  210200            	ld	hl,2	;const
+    63  01f8  39                	add	hl,sp
+    63  01f9  5e                	ld	e,(hl)
+    63  01fa  1600              	ld	d,0
+    63  01fc  210a00            	ld	hl,10	;const
+    63  01ff  cd0000            	call	l_div_u
+    63  0202  013000            	ld	bc,48
+    63  0205  09                	add	hl,bc
+    63  0206  7d                	ld	a,l
+    63  0207  cd0000            	call	l_sxt
+    63  020a  e5                	push	hl
+    63  020b  cdda01            	call	_printChar
+    63  020e  c1                	pop	bc
+    63                          .i_8
+    63  020f  210200            	ld	hl,2	;const
+    63  0212  39                	add	hl,sp
+    63  0213  5e                	ld	e,(hl)
+    63  0214  1600              	ld	d,0
+    63  0216  210a00            	ld	hl,10	;const
+    63  0219  cd0000            	call	l_div_u
+    63  021c  eb                	ex	de,hl
+    63  021d  013000            	ld	bc,48
+    63  0220  09                	add	hl,bc
+    63  0221  7d                	ld	a,l
+    63  0222  cd0000            	call	l_sxt
+    63  0225  e5                	push	hl
+    63  0226  cdda01            	call	_printChar
+    63  0229  c1                	pop	bc
+    63  022a  c9                	ret
+    63                          
+    63                          
+    63                          	C_LINE	70,"rtccalib.c::printNum::0::10"
+rtccalib.c::printNum::0::10:
+    70                          
+    70                          ; Function printNum2 flags 0x00000200 __smallc
+    70                          ; void printNum2(unsigned char num)
+    70                          ; parameter 'unsigned char num' at sp+2 size(1)
+    70                          	C_LINE	70,"rtccalib.c::printNum2::0::10"
+rtccalib.c::printNum2::0::10:
+    70                          ._printNum2
+    70  022b  210200            	ld	hl,2	;const
+    70  022e  39                	add	hl,sp
+    70  022f  5e                	ld	e,(hl)
+    70  0230  1600              	ld	d,0
+    70  0232  210a00            	ld	hl,10	;const
+    70  0235  cd0000            	call	l_div_u
+    70  0238  013000            	ld	bc,48
+    70  023b  09                	add	hl,bc
+    70  023c  7d                	ld	a,l
+    70  023d  cd0000            	call	l_sxt
+    70  0240  e5                	push	hl
+    70  0241  cdda01            	call	_printChar
+    70  0244  c1                	pop	bc
+    70  0245  210200            	ld	hl,2	;const
+    70  0248  39                	add	hl,sp
+    70  0249  5e                	ld	e,(hl)
+    70  024a  1600              	ld	d,0
+    70  024c  210a00            	ld	hl,10	;const
+    70  024f  cd0000            	call	l_div_u
+    70  0252  eb                	ex	de,hl
+    70  0253  013000            	ld	bc,48
+    70  0256  09                	add	hl,bc
+    70  0257  7d                	ld	a,l
+    70  0258  cd0000            	call	l_sxt
+    70  025b  e5                	push	hl
+    70  025c  cdda01            	call	_printChar
+    70  025f  c1                	pop	bc
+    70  0260  c9                	ret
+    70                          
+    70                          
+    70                          	C_LINE	76,"rtccalib.c::printNum2::0::11"
+rtccalib.c::printNum2::0::11:
+    76                          
+    76                          ; Function printDateTime flags 0x00000200 __smallc
+    76                          ; void printDateTime(struct 0__anonstruct_7_0 RTC_Time* dt)
+    76                          ; parameter 'struct 0__anonstruct_7_0 RTC_Time* dt' at sp+2 size(2)
+    76                          	C_LINE	76,"rtccalib.c::printDateTime::0::11"
+rtccalib.c::printDateTime::0::11:
+    76                          ._printDateTime
+    76  0261  c1                	pop	bc
+    76  0262  e1                	pop	hl
+    76  0263  e5                	push	hl
+    76  0264  c5                	push	bc
+    76  0265  23                	inc	hl
+    76  0266  23                	inc	hl
+    76  0267  23                	inc	hl
+    76  0268  6e                	ld	l,(hl)
+    76  0269  2600              	ld	h,0
+    76  026b  e5                	push	hl
+    76  026c  cd2b02            	call	_printNum2
+    76  026f  212f00            	ld	hl,47	;const
+    76  0272  e3                	ex	(sp),hl
+    76  0273  cdda01            	call	_printChar
+    76  0276  c1                	pop	bc
+    76  0277  c1                	pop	bc
+    76  0278  e1                	pop	hl
+    76  0279  e5                	push	hl
+    76  027a  c5                	push	bc
+    76  027b  010400            	ld	bc,4
+    76  027e  09                	add	hl,bc
+    76  027f  6e                	ld	l,(hl)
+    76  0280  2600              	ld	h,0
+    76  0282  e5                	push	hl
+    76  0283  cd2b02            	call	_printNum2
+    76  0286  212f00            	ld	hl,47	;const
+    76  0289  e3                	ex	(sp),hl
+    76  028a  cdda01            	call	_printChar
+    76  028d  213200            	ld	hl,50	;const
+    76  0290  e3                	ex	(sp),hl
+    76  0291  cdda01            	call	_printChar
+    76  0294  213000            	ld	hl,48	;const
+    76  0297  e3                	ex	(sp),hl
+    76  0298  cdda01            	call	_printChar
+    76  029b  c1                	pop	bc
+    76  029c  c1                	pop	bc
+    76  029d  e1                	pop	hl
+    76  029e  e5                	push	hl
+    76  029f  c5                	push	bc
+    76  02a0  010500            	ld	bc,5
+    76  02a3  09                	add	hl,bc
+    76  02a4  6e                	ld	l,(hl)
+    76  02a5  2600              	ld	h,0
+    76  02a7  e5                	push	hl
+    76  02a8  cd2b02            	call	_printNum2
+    76  02ab  212000            	ld	hl,32	;const
+    76  02ae  e3                	ex	(sp),hl
+    76  02af  cdda01            	call	_printChar
+    76  02b2  c1                	pop	bc
+    76  02b3  c1                	pop	bc
+    76  02b4  e1                	pop	hl
+    76  02b5  e5                	push	hl
+    76  02b6  c5                	push	bc
+    76  02b7  23                	inc	hl
+    76  02b8  23                	inc	hl
+    76  02b9  6e                	ld	l,(hl)
+    76  02ba  2600              	ld	h,0
+    76  02bc  e5                	push	hl
+    76  02bd  cd2b02            	call	_printNum2
+    76  02c0  213a00            	ld	hl,58	;const
+    76  02c3  e3                	ex	(sp),hl
+    76  02c4  cdda01            	call	_printChar
+    76  02c7  c1                	pop	bc
+    76  02c8  c1                	pop	bc
+    76  02c9  e1                	pop	hl
+    76  02ca  e5                	push	hl
+    76  02cb  c5                	push	bc
+    76  02cc  23                	inc	hl
+    76  02cd  6e                	ld	l,(hl)
+    76  02ce  2600              	ld	h,0
+    76  02d0  e5                	push	hl
+    76  02d1  cd2b02            	call	_printNum2
+    76  02d4  213a00            	ld	hl,58	;const
+    76  02d7  e3                	ex	(sp),hl
+    76  02d8  cdda01            	call	_printChar
+    76  02db  c1                	pop	bc
+    76  02dc  c1                	pop	bc
+    76  02dd  e1                	pop	hl
+    76  02de  e5                	push	hl
+    76  02df  c5                	push	bc
+    76  02e0  6e                	ld	l,(hl)
+    76  02e1  2600              	ld	h,0
+    76  02e3  e5                	push	hl
+    76  02e4  cd2b02            	call	_printNum2
+    76  02e7  c1                	pop	bc
+    76  02e8  c9                	ret
+    76                          
+    76                          
+    76                          	C_LINE	93,"rtccalib.c::printDateTime::0::12"
+rtccalib.c::printDateTime::0::12:
+    93                          
+    93                          ; Function readDigit flags 0x00000200 __smallc
+    93                          ; unsigned char readDigit()
+    93                          	C_LINE	93,"rtccalib.c::readDigit::0::12"
+rtccalib.c::readDigit::0::12:
+    93                          ._readDigit
+    93  02e9  3b                	dec	sp
+    93                          .i_9
+    93  02ea  210000            	ld	hl,0	;const
+    93  02ed  39                	add	hl,sp
+    93  02ee  e5                	push	hl
+    93  02ef  cd0000            	call	_cRawIo
+    93  02f2  7d                	ld	a,l
+    93  02f3  d1                	pop	de
+    93  02f4  12                	ld	(de),a
+    93  02f5  210000            	ld	hl,0	;const
+    93  02f8  39                	add	hl,sp
+    93  02f9  cd0000            	call	l_gchar
+    93  02fc  113000            	ld	de,48
+    93  02ff  eb                	ex	de,hl
+    93  0300  cd0000            	call	l_ge
+    93  0303  d2ea02            	jp	nc,i_12	;
+    93  0306  210000            	ld	hl,0	;const
+    93  0309  39                	add	hl,sp
+    93  030a  cd0000            	call	l_gchar
+    93  030d  113900            	ld	de,57
+    93  0310  eb                	ex	de,hl
+    93  0311  cd0000            	call	l_le
+    93  0314  d2ea02            	jp	nc,i_12	;
+    93                          .i_13_i_12
+    93  0317  210000            	ld	hl,0	;const
+    93  031a  39                	add	hl,sp
+    93  031b  cd0000            	call	l_gchar
+    93  031e  e5                	push	hl
+    93  031f  cdda01            	call	_printChar
+    93  0322  c1                	pop	bc
+    93  0323  210000            	ld	hl,0	;const
+    93  0326  39                	add	hl,sp
+    93  0327  cd0000            	call	l_gchar
+    93  032a  01d0ff            	ld	bc,-48
+    93  032d  09                	add	hl,bc
+    93  032e  2600              	ld	h,0
+    93  0330  33                	inc	sp
+    93  0331  c9                	ret
+    93                          .i_10
+    93  0332  33                	inc	sp
+    93  0333  c9                	ret
+    93                          
+    93                          
+    93                          	C_LINE	104,"rtccalib.c::readDigit::0::15"
+rtccalib.c::readDigit::0::15:
+   104                          
+   104                          ; Function readTwoDigits flags 0x00000200 __smallc
+   104                          ; unsigned char readTwoDigits()
+   104                          	C_LINE	104,"rtccalib.c::readTwoDigits::0::15"
+rtccalib.c::readTwoDigits::0::15:
+   104                          ._readTwoDigits
+   104  0334  c5                	push	bc
+   104  0335  210100            	ld	hl,1	;const
+   104  0338  39                	add	hl,sp
+   104  0339  e5                	push	hl
+   104  033a  cde902            	call	_readDigit
+   104  033d  d1                	pop	de
+   104  033e  7d                	ld	a,l
+   104  033f  12                	ld	(de),a
+   104  0340  210000            	ld	hl,0	;const
+   104  0343  39                	add	hl,sp
+   104  0344  e5                	push	hl
+   104  0345  cde902            	call	_readDigit
+   104  0348  d1                	pop	de
+   104  0349  7d                	ld	a,l
+   104  034a  12                	ld	(de),a
+   104  034b  e1                	pop	hl
+   104  034c  e5                	push	hl
+   104  034d  6c                	ld	l,h
+   104  034e  2600              	ld	h,0
+   104  0350  44                	ld	b,h
+   104  0351  4d                	ld	c,l
+   104  0352  29                	add	hl,hl
+   104  0353  29                	add	hl,hl
+   104  0354  09                	add	hl,bc
+   104  0355  29                	add	hl,hl
+   104  0356  eb                	ex	de,hl
+   104  0357  e1                	pop	hl
+   104  0358  e5                	push	hl
+   104  0359  2600              	ld	h,0
+   104  035b  19                	add	hl,de
+   104  035c  2600              	ld	h,0
+   104  035e  c1                	pop	bc
+   104  035f  c9                	ret
+   104                          
+   104                          
+   104                          	C_LINE	112,"rtccalib.c::readTwoDigits::0::16"
+rtccalib.c::readTwoDigits::0::16:
+   112                          
+   112                          ; Function setTime flags 0x00000200 __smallc
+   112                          ; void setTime()
+   112                          	C_LINE	112,"rtccalib.c::setTime::0::16"
+rtccalib.c::setTime::0::16:
+   112                          ._setTime
+   112  0360  210000            	ld	hl,i_1+0
+   112  0363  e5                	push	hl
+   112  0364  cdc101            	call	_printStr
+   112  0367  211400            	ld	hl,i_1+20
+   112  036a  e3                	ex	(sp),hl
+   112  036b  cdc101            	call	_printStr
+   112  036e  213e00            	ld	hl,i_1+62
+   112  0371  e3                	ex	(sp),hl
+   112  0372  cdc101            	call	_printStr
+   112  0375  210500            	ld	hl,_datetime+5
+   112  0378  e3                	ex	(sp),hl
+   112  0379  cd3403            	call	_readTwoDigits
+   112  037c  d1                	pop	de
+   112  037d  7d                	ld	a,l
+   112  037e  12                	ld	(de),a
+   112  037f  211100            	ld	hl,i_1+17
+   112  0382  e5                	push	hl
+   112  0383  cdc101            	call	_printStr
+   112  0386  214500            	ld	hl,i_1+69
+   112  0389  e3                	ex	(sp),hl
+   112  038a  cdc101            	call	_printStr
+   112  038d  210400            	ld	hl,_datetime+4
+   112  0390  e3                	ex	(sp),hl
+   112  0391  cd3403            	call	_readTwoDigits
+   112  0394  d1                	pop	de
+   112  0395  7d                	ld	a,l
+   112  0396  12                	ld	(de),a
+   112  0397  211100            	ld	hl,i_1+17
+   112  039a  e5                	push	hl
+   112  039b  cdc101            	call	_printStr
+   112  039e  214d00            	ld	hl,i_1+77
+   112  03a1  e3                	ex	(sp),hl
+   112  03a2  cdc101            	call	_printStr
+   112  03a5  210300            	ld	hl,_datetime+3
+   112  03a8  e3                	ex	(sp),hl
+   112  03a9  cd3403            	call	_readTwoDigits
+   112  03ac  d1                	pop	de
+   112  03ad  7d                	ld	a,l
+   112  03ae  12                	ld	(de),a
+   112  03af  211100            	ld	hl,i_1+17
+   112  03b2  e5                	push	hl
+   112  03b3  cdc101            	call	_printStr
+   112  03b6  215300            	ld	hl,i_1+83
+   112  03b9  e3                	ex	(sp),hl
+   112  03ba  cdc101            	call	_printStr
+   112  03bd  210200            	ld	hl,_datetime+2
+   112  03c0  e3                	ex	(sp),hl
+   112  03c1  cd3403            	call	_readTwoDigits
+   112  03c4  d1                	pop	de
+   112  03c5  7d                	ld	a,l
+   112  03c6  12                	ld	(de),a
+   112  03c7  211100            	ld	hl,i_1+17
+   112  03ca  e5                	push	hl
+   112  03cb  cdc101            	call	_printStr
+   112  03ce  215a00            	ld	hl,i_1+90
+   112  03d1  e3                	ex	(sp),hl
+   112  03d2  cdc101            	call	_printStr
+   112  03d5  210100            	ld	hl,_datetime+1
+   112  03d8  e3                	ex	(sp),hl
+   112  03d9  cd3403            	call	_readTwoDigits
+   112  03dc  d1                	pop	de
+   112  03dd  7d                	ld	a,l
+   112  03de  12                	ld	(de),a
+   112  03df  211100            	ld	hl,i_1+17
+   112  03e2  e5                	push	hl
+   112  03e3  cdc101            	call	_printStr
+   112  03e6  216300            	ld	hl,i_1+99
+   112  03e9  e3                	ex	(sp),hl
+   112  03ea  cdc101            	call	_printStr
+   112  03ed  210000            	ld	hl,_datetime
+   112  03f0  e3                	ex	(sp),hl
+   112  03f1  cd3403            	call	_readTwoDigits
+   112  03f4  d1                	pop	de
+   112  03f5  7d                	ld	a,l
+   112  03f6  12                	ld	(de),a
+   112  03f7  211100            	ld	hl,i_1+17
+   112  03fa  e5                	push	hl
+   112  03fb  cdc101            	call	_printStr
+   112  03fe  210000            	ld	hl,_datetime
+   112  0401  e3                	ex	(sp),hl
+   112  0402  cd3501            	call	_convertToBcd
+   112  0405  210000            	ld	hl,_datetime
+   112  0408  e3                	ex	(sp),hl
+   112  0409  cd0000            	call	_hbios_rtc_set_time
+   112  040c  c1                	pop	bc
+   112  040d  7c                	ld	a,h
+   112  040e  b5                	or	l
+   112  040f  c21b04            	jp	nz,i_14	;
+   112  0412  216c00            	ld	hl,i_1+108
+   112  0415  e5                	push	hl
+   112  0416  cdc101            	call	_printStr
+   112  0419  c1                	pop	bc
+   112  041a  c9                	ret
+   112                          .i_14
+   112  041b  218500            	ld	hl,i_1+133
+   112  041e  e5                	push	hl
+   112  041f  cdc101            	call	_printStr
+   112  0422  c1                	pop	bc
+   112                          .i_15
+   112  0423  c9                	ret
+   112                          
+   112                          
+   112                          	C_LINE	148,"rtccalib.c::setTime::0::19"
+rtccalib.c::setTime::0::19:
+   148                          
+   148                          ; Function printHex flags 0x00000200 __smallc
+   148                          ; void printHex(unsigned char val)
+   148                          ; parameter 'unsigned char val' at sp+2 size(1)
+   148                          	C_LINE	148,"rtccalib.c::printHex::0::19"
+rtccalib.c::printHex::0::19:
+   148                          ._printHex
+   148  0424  210200            	ld	hl,2	;const
+   148  0427  39                	add	hl,sp
+   148  0428  6e                	ld	l,(hl)
+   148  0429  2600              	ld	h,0
+   148  042b  7d                	ld	a,l
+   148  042c  0f                	rrca
+   148  042d  0f                	rrca
+   148  042e  0f                	rrca
+   148  042f  0f                	rrca
+   148  0430  e60f              	and	15
+   148  0432  6f                	ld	l,a
+   148  0433  2600              	ld	h,0
+   148  0435  3b                	dec	sp
+   148  0436  7d                	ld	a,l
+   148  0437  e1                	pop	hl
+   148  0438  6f                	ld	l,a
+   148  0439  e5                	push	hl
+   148  043a  210300            	ld	hl,3	;const
+   148  043d  39                	add	hl,sp
+   148  043e  7e                	ld	a,(hl)
+   148  043f  e60f              	and	15
+   148  0441  6f                	ld	l,a
+   148  0442  2600              	ld	h,0
+   148  0444  3b                	dec	sp
+   148  0445  7d                	ld	a,l
+   148  0446  e1                	pop	hl
+   148  0447  6f                	ld	l,a
+   148  0448  e5                	push	hl
+   148  0449  6c                	ld	l,h
+   148  044a  7d                	ld	a,l
+   148  044b  d60a              	sub	10
+   148  044d  d25c04            	jp	nc,i_18	;
+   148  0450  e1                	pop	hl
+   148  0451  e5                	push	hl
+   148  0452  6c                	ld	l,h
+   148  0453  2600              	ld	h,0
+   148  0455  013000            	ld	bc,48
+   148  0458  09                	add	hl,bc
+   148  0459  c36504            	jp	i_19	;
+   148                          .i_18
+   148  045c  e1                	pop	hl
+   148  045d  e5                	push	hl
+   148  045e  6c                	ld	l,h
+   148  045f  2600              	ld	h,0
+   148  0461  013700            	ld	bc,55
+   148  0464  09                	add	hl,bc
+   148                          .i_19
+   148  0465  7d                	ld	a,l
+   148  0466  cd0000            	call	l_sxt
+   148  0469  e5                	push	hl
+   148  046a  cdda01            	call	_printChar
+   148  046d  c1                	pop	bc
+   148  046e  e1                	pop	hl
+   148  046f  e5                	push	hl
+   148  0470  7d                	ld	a,l
+   148  0471  d60a              	sub	10
+   148  0473  d28104            	jp	nc,i_22	;
+   148  0476  e1                	pop	hl
+   148  0477  e5                	push	hl
+   148  0478  2600              	ld	h,0
+   148  047a  013000            	ld	bc,48
+   148  047d  09                	add	hl,bc
+   148  047e  c38904            	jp	i_23	;
+   148                          .i_22
+   148  0481  e1                	pop	hl
+   148  0482  e5                	push	hl
+   148  0483  2600              	ld	h,0
+   148  0485  013700            	ld	bc,55
+   148  0488  09                	add	hl,bc
+   148                          .i_23
+   148  0489  7d                	ld	a,l
+   148  048a  cd0000            	call	l_sxt
+   148  048d  e5                	push	hl
+   148  048e  cdda01            	call	_printChar
+   148  0491  c1                	pop	bc
+   148  0492  c1                	pop	bc
+   148  0493  c9                	ret
+   148                          
+   148                          
+   148                          	C_LINE	156,"rtccalib.c::printHex::0::20"
+rtccalib.c::printHex::0::20:
+   156                          
+   156                          ; Function testRtc flags 0x00000200 __smallc
+   156                          ; void testRtc()
+   156                          	C_LINE	156,"rtccalib.c::testRtc::0::20"
+rtccalib.c::testRtc::0::20:
+   156                          ._testRtc
+   156  0494  219b00            	ld	hl,i_1+155
+   156  0497  e5                	push	hl
+   156  0498  cdc101            	call	_printStr
+   156  049b  c1                	pop	bc
+   156  049c  cd0000            	call	_hbios_rtc_detect
+   156  049f  cd0000            	call	l_lneg
+   156  04a2  d2ae04            	jp	nc,i_24	;
+   156  04a5  21b900            	ld	hl,i_1+185
+   156  04a8  e5                	push	hl
+   156  04a9  cdc101            	call	_printStr
+   156  04ac  c1                	pop	bc
+   156  04ad  c9                	ret
+   156                          
+   156                          
+   156                          .i_24
+   156  04ae  21d600            	ld	hl,i_1+214
+   156  04b1  e5                	push	hl
+   156  04b2  cdc101            	call	_printStr
+   156  04b5  c1                	pop	bc
+   156  04b6  cd0000            	call	_hbios_rtc_test
+   156  04b9  e5                	push	hl
+   156  04ba  21ef00            	ld	hl,i_1+239
+   156  04bd  e5                	push	hl
+   156  04be  cdc101            	call	_printStr
+   156  04c1  c1                	pop	bc
+   156  04c2  e1                	pop	hl
+   156  04c3  e5                	push	hl
+   156  04c4  2600              	ld	h,0
+   156  04c6  e5                	push	hl
+   156  04c7  cd2404            	call	_printHex
+   156  04ca  211100            	ld	hl,i_1+17
+   156  04cd  e3                	ex	(sp),hl
+   156  04ce  cdc101            	call	_printStr
+   156  04d1  210000            	ld	hl,_datetime
+   156  04d4  e3                	ex	(sp),hl
+   156  04d5  cd0000            	call	_hbios_rtc_get_time
+   156  04d8  c1                	pop	bc
+   156  04d9  e5                	push	hl
+   156  04da  21f700            	ld	hl,i_1+247
+   156  04dd  e5                	push	hl
+   156  04de  cdc101            	call	_printStr
+   156  04e1  c1                	pop	bc
+   156  04e2  e1                	pop	hl
+   156  04e3  e5                	push	hl
+   156  04e4  2600              	ld	h,0
+   156  04e6  e5                	push	hl
+   156  04e7  cd2404            	call	_printHex
+   156  04ea  210101            	ld	hl,i_1+257
+   156  04ed  e3                	ex	(sp),hl
+   156  04ee  cdc101            	call	_printStr
+   156  04f1  c1                	pop	bc
+   156  04f2  e1                	pop	hl
+   156  04f3  e5                	push	hl
+   156  04f4  6c                	ld	l,h
+   156  04f5  7c                	ld	a,h
+   156  04f6  07                	rlca
+   156  04f7  9f                	sbc	a
+   156  04f8  2600              	ld	h,0
+   156  04fa  e5                	push	hl
+   156  04fb  cd2404            	call	_printHex
+   156  04fe  c1                	pop	bc
+   156  04ff  e1                	pop	hl
+   156  0500  e5                	push	hl
+   156  0501  2600              	ld	h,0
+   156  0503  e5                	push	hl
+   156  0504  cd2404            	call	_printHex
+   156  0507  213a00            	ld	hl,i_1+58
+   156  050a  e3                	ex	(sp),hl
+   156  050b  cdc101            	call	_printStr
+   156  050e  c1                	pop	bc
+   156  050f  e1                	pop	hl
+   156  0510  e5                	push	hl
+   156  0511  7c                	ld	a,h
+   156  0512  b5                	or	l
+   156  0513  c2a305            	jp	nz,i_25	;
+   156  0516  210a01            	ld	hl,i_1+266
+   156  0519  e5                	push	hl
+   156  051a  cdc101            	call	_printStr
+   156  051d  c1                	pop	bc
+   156  051e  2a0000            	ld	hl,(_datetime)
+   156  0521  2600              	ld	h,0
+   156  0523  e5                	push	hl
+   156  0524  cd2404            	call	_printHex
+   156  0527  212000            	ld	hl,32	;const
+   156  052a  e3                	ex	(sp),hl
+   156  052b  cdda01            	call	_printChar
+   156  052e  c1                	pop	bc
+   156  052f  2a0100            	ld	hl,(_datetime+1)
+   156  0532  2600              	ld	h,0
+   156  0534  e5                	push	hl
+   156  0535  cd2404            	call	_printHex
+   156  0538  212000            	ld	hl,32	;const
+   156  053b  e3                	ex	(sp),hl
+   156  053c  cdda01            	call	_printChar
+   156  053f  c1                	pop	bc
+   156  0540  2a0200            	ld	hl,(_datetime+2)
+   156  0543  2600              	ld	h,0
+   156  0545  e5                	push	hl
+   156  0546  cd2404            	call	_printHex
+   156  0549  212000            	ld	hl,32	;const
+   156  054c  e3                	ex	(sp),hl
+   156  054d  cdda01            	call	_printChar
+   156  0550  c1                	pop	bc
+   156  0551  2a0300            	ld	hl,(_datetime+3)
+   156  0554  2600              	ld	h,0
+   156  0556  e5                	push	hl
+   156  0557  cd2404            	call	_printHex
+   156  055a  212000            	ld	hl,32	;const
+   156  055d  e3                	ex	(sp),hl
+   156  055e  cdda01            	call	_printChar
+   156  0561  c1                	pop	bc
+   156  0562  2a0400            	ld	hl,(_datetime+4)
+   156  0565  2600              	ld	h,0
+   156  0567  e5                	push	hl
+   156  0568  cd2404            	call	_printHex
+   156  056b  212000            	ld	hl,32	;const
+   156  056e  e3                	ex	(sp),hl
+   156  056f  cdda01            	call	_printChar
+   156  0572  c1                	pop	bc
+   156  0573  2a0500            	ld	hl,(_datetime+5)
+   156  0576  2600              	ld	h,0
+   156  0578  e5                	push	hl
+   156  0579  cd2404            	call	_printHex
+   156  057c  211100            	ld	hl,i_1+17
+   156  057f  e3                	ex	(sp),hl
+   156  0580  cdc101            	call	_printStr
+   156  0583  210000            	ld	hl,_datetime
+   156  0586  e3                	ex	(sp),hl
+   156  0587  cda900            	call	_convertFromBcd
+   156  058a  212101            	ld	hl,i_1+289
+   156  058d  e3                	ex	(sp),hl
+   156  058e  cdc101            	call	_printStr
+   156  0591  210000            	ld	hl,_datetime
+   156  0594  e3                	ex	(sp),hl
+   156  0595  cd6102            	call	_printDateTime
+   156  0598  211100            	ld	hl,i_1+17
+   156  059b  e3                	ex	(sp),hl
+   156  059c  cdc101            	call	_printStr
+   156  059f  c1                	pop	bc
+   156  05a0  c3ab05            	jp	i_26	;EOS
+   156                          .i_25
+   156  05a3  213401            	ld	hl,i_1+308
+   156  05a6  e5                	push	hl
+   156  05a7  cdc101            	call	_printStr
+   156  05aa  c1                	pop	bc
+   156                          .i_26
+   156  05ab  214d01            	ld	hl,i_1+333
+   156  05ae  e5                	push	hl
+   156  05af  cdc101            	call	_printStr
+   156  05b2  216c01            	ld	hl,i_1+364
+   156  05b5  e3                	ex	(sp),hl
+   156  05b6  cdc101            	call	_printStr
+   156  05b9  c1                	pop	bc
+   156                          .i_27
+   156  05ba  cd0000            	call	_cRawIo
+   156  05bd  7d                	ld	a,l
+   156  05be  a7                	and	a
+   156  05bf  caba05            	jp	z,i_27	;EOS
+   156                          .i_28
+   156  05c2  c1                	pop	bc
+   156  05c3  c1                	pop	bc
+   156  05c4  c9                	ret
+   156                          
+   156                          
+   156                          	C_LINE	204,"rtccalib.c::testRtc::0::25"
+rtccalib.c::testRtc::0::25:
+   204                          
+   204                          ; Function showHelp flags 0x00000200 __smallc
+   204                          ; void showHelp()
+   204                          	C_LINE	204,"rtccalib.c::showHelp::0::25"
+rtccalib.c::showHelp::0::25:
+   204                          ._showHelp
+   204  05c5  218b01            	ld	hl,i_1+395
+   204  05c8  e5                	push	hl
+   204  05c9  cdc101            	call	_printStr
+   204  05cc  21b401            	ld	hl,i_1+436
+   204  05cf  e3                	ex	(sp),hl
+   204  05d0  cdc101            	call	_printStr
+   204  05d3  21c001            	ld	hl,i_1+448
+   204  05d6  e3                	ex	(sp),hl
+   204  05d7  cdc101            	call	_printStr
+   204  05da  21dd01            	ld	hl,i_1+477
+   204  05dd  e3                	ex	(sp),hl
+   204  05de  cdc101            	call	_printStr
+   204  05e1  21f201            	ld	hl,i_1+498
+   204  05e4  e3                	ex	(sp),hl
+   204  05e5  cdc101            	call	_printStr
+   204  05e8  210802            	ld	hl,i_1+520
+   204  05eb  e3                	ex	(sp),hl
+   204  05ec  cdc101            	call	_printStr
+   204  05ef  211f02            	ld	hl,i_1+543
+   204  05f2  e3                	ex	(sp),hl
+   204  05f3  cdc101            	call	_printStr
+   204  05f6  213402            	ld	hl,i_1+564
+   204  05f9  e3                	ex	(sp),hl
+   204  05fa  cdc101            	call	_printStr
+   204  05fd  216c01            	ld	hl,i_1+364
+   204  0600  e3                	ex	(sp),hl
+   204  0601  cdc101            	call	_printStr
+   204  0604  c1                	pop	bc
+   204                          .i_29
+   204  0605  cd0000            	call	_cRawIo
+   204  0608  7d                	ld	a,l
+   204  0609  a7                	and	a
+   204  060a  ca0506            	jp	z,i_29	;EOS
+   204                          .i_30
+   204  060d  c9                	ret
+   204                          
+   204                          
+   204                          	C_LINE	217,"rtccalib.c::showHelp::0::27"
+rtccalib.c::showHelp::0::27:
+   217                          
+   217                          ; Function main flags 0x00000000 __stdc
+   217                          ; void main()
+   217                          	C_LINE	217,"rtccalib.c::main::0::28"
+rtccalib.c::main::0::28:
+   217                          ._main
+   217  060e  3b                	dec	sp
+   217  060f  216102            	ld	hl,i_1+609
+   217  0612  e5                	push	hl
+   217  0613  cdc101            	call	_printStr
+   217  0616  213602            	ld	hl,i_1+566
+   217  0619  e3                	ex	(sp),hl
+   217  061a  cdc101            	call	_printStr
+   217  061d  218a02            	ld	hl,i_1+650
+   217  0620  e3                	ex	(sp),hl
+   217  0621  cdc101            	call	_printStr
+   217  0624  c1                	pop	bc
+   217  0625  cd0000            	call	_hbios_rtc_detect
+   217  0628  cd0000            	call	l_lneg
+   217  062b  d25406            	jp	nc,i_31	;
+   217  062e  21b502            	ld	hl,i_1+693
+   217  0631  e5                	push	hl
+   217  0632  cdc101            	call	_printStr
+   217  0635  21db02            	ld	hl,i_1+731
+   217  0638  e3                	ex	(sp),hl
+   217  0639  cdc101            	call	_printStr
+   217  063c  21eb02            	ld	hl,i_1+747
+   217  063f  e3                	ex	(sp),hl
+   217  0640  cdc101            	call	_printStr
+   217  0643  211d03            	ld	hl,i_1+797
+   217  0646  e3                	ex	(sp),hl
+   217  0647  cdc101            	call	_printStr
+   217  064a  213f03            	ld	hl,i_1+831
+   217  064d  e3                	ex	(sp),hl
+   217  064e  cdc101            	call	_printStr
+   217  0651  c1                	pop	bc
+   217  0652  33                	inc	sp
+   217  0653  c9                	ret
+   217                          
+   217                          
+   217                          .i_31
+   217  0654  215f03            	ld	hl,i_1+863
+   217  0657  e5                	push	hl
+   217  0658  cdc101            	call	_printStr
+   217  065b  c1                	pop	bc
+   217                          .i_32
+   217  065c  218303            	ld	hl,i_1+899
+   217  065f  e5                	push	hl
+   217  0660  cdc101            	call	_printStr
+   217  0663  219903            	ld	hl,i_1+921
+   217  0666  e3                	ex	(sp),hl
+   217  0667  cdc101            	call	_printStr
+   217  066a  21c603            	ld	hl,i_1+966
+   217  066d  e3                	ex	(sp),hl
+   217  066e  cdc101            	call	_printStr
+   217  0671  c1                	pop	bc
+   217  0672  210000            	ld	hl,0	;const
+   217  0675  39                	add	hl,sp
+   217  0676  3600              	ld	(hl),0
+   217                          .i_34
+   217  0678  210000            	ld	hl,0	;const
+   217  067b  39                	add	hl,sp
+   217  067c  e5                	push	hl
+   217  067d  cd0000            	call	_cRawIo
+   217  0680  7d                	ld	a,l
+   217  0681  cd0000            	call	l_sxt
+   217  0684  d1                	pop	de
+   217  0685  7d                	ld	a,l
+   217  0686  12                	ld	(de),a
+   217  0687  a7                	and	a
+   217  0688  ca7806            	jp	z,i_34	;EOS
+   217                          .i_35
+   217  068b  210000            	ld	hl,0	;const
+   217  068e  39                	add	hl,sp
+   217  068f  cd0000            	call	l_gchar
+   217  0692  e5                	push	hl
+   217  0693  cdda01            	call	_printChar
+   217  0696  211100            	ld	hl,i_1+17
+   217  0699  e3                	ex	(sp),hl
+   217  069a  cdc101            	call	_printStr
+   217  069d  c1                	pop	bc
+   217  069e  210000            	ld	hl,0	;const
+   217  06a1  39                	add	hl,sp
+   217  06a2  cd0000            	call	l_gchar
+   217                          .i_38
+   217  06a5  7d                	ld	a,l
+   217  06a6  fe54              	cp	+(84% 256)
+   217  06a8  cad606            	jp	z,i_39	;
+   217  06ab  fe74              	cp	+(116% 256)
+   217  06ad  cad606            	jp	z,i_40	;
+   217  06b0  fe53              	cp	+(83% 256)
+   217  06b2  ca0e07            	jp	z,i_43	;
+   217  06b5  fe73              	cp	+(115% 256)
+   217  06b7  ca0e07            	jp	z,i_44	;
+   217  06ba  fe48              	cp	+(72% 256)
+   217  06bc  ca1407            	jp	z,i_45	;
+   217  06bf  fe68              	cp	+(104% 256)
+   217  06c1  ca1407            	jp	z,i_46	;
+   217  06c4  fe3f              	cp	+(63% 256)
+   217  06c6  ca1a07            	jp	z,i_47	;
+   217  06c9  fe51              	cp	+(81% 256)
+   217  06cb  ca2007            	jp	z,i_48	;
+   217  06ce  fe71              	cp	+(113% 256)
+   217  06d0  ca2007            	jp	z,i_49	;
+   217  06d3  c32a07            	jp	i_50	;EOS
+   217                          .i_40
+   217  06d6  210000            	ld	hl,_datetime
+   217  06d9  e5                	push	hl
+   217  06da  cd0000            	call	_hbios_rtc_get_time
+   217  06dd  c1                	pop	bc
+   217  06de  7c                	ld	a,h
+   217  06df  b5                	or	l
+   217  06e0  c20307            	jp	nz,i_41	;
+   217  06e3  210000            	ld	hl,_datetime
+   217  06e6  e5                	push	hl
+   217  06e7  cda900            	call	_convertFromBcd
+   217  06ea  21d003            	ld	hl,i_1+976
+   217  06ed  e3                	ex	(sp),hl
+   217  06ee  cdc101            	call	_printStr
+   217  06f1  210000            	ld	hl,_datetime
+   217  06f4  e3                	ex	(sp),hl
+   217  06f5  cd6102            	call	_printDateTime
+   217  06f8  211100            	ld	hl,i_1+17
+   217  06fb  e3                	ex	(sp),hl
+   217  06fc  cdc101            	call	_printStr
+   217  06ff  c1                	pop	bc
+   217  0700  c35c06            	jp	i_42	;EOS
+   217                          .i_41
+   217  0703  213401            	ld	hl,i_1+308
+   217  0706  e5                	push	hl
+   217  0707  cdc101            	call	_printStr
+   217  070a  c1                	pop	bc
+   217  070b  c35c06            	jp	i_37	;EOS
+   217                          .i_44
+   217  070e  cd6003            	call	_setTime
+   217  0711  c35c06            	jp	i_37	;EOS
+   217                          .i_46
+   217  0714  cd9404            	call	_testRtc
+   217  0717  c35c06            	jp	i_37	;EOS
+   217                          .i_47
+   217  071a  cdc505            	call	_showHelp
+   217  071d  c35c06            	jp	i_37	;EOS
+   217                          .i_49
+   217  0720  21df03            	ld	hl,i_1+991
+   217  0723  e5                	push	hl
+   217  0724  cdc101            	call	_printStr
+   217  0727  c1                	pop	bc
+   217  0728  33                	inc	sp
+   217  0729  c9                	ret
+   217                          
+   217                          
+   217                          .i_50
+   217  072a  21ea03            	ld	hl,i_1+1002
+   217  072d  e5                	push	hl
+   217  072e  cdc101            	call	_printStr
+   217  0731  c1                	pop	bc
+   217  0732  c35c06            	jp	i_32	;EOS
+   217                          .i_33
+   217  0735  33                	inc	sp
+   217  0736  c9                	ret
+   217                          
+   217                          
+   217                          	SECTION	bss_compiler
+   217                          	SECTION	code_compiler
+   217                          ; --- Start of Optimiser additions ---
+   217                          	defc	i_39 = i_40
+   217                          	defc	i_43 = i_44
+   217                          	defc	i_45 = i_46
+   217                          	defc	i_48 = i_49
+   217                          	defc	i_12 = i_11
+   217                          	defc	i_11 = i_9
+   217                          	defc	i_42 = i_37
+   217                          	defc	i_37 = i_32
+   217                          
+   217                          	SECTION	rodata_compiler
+   217                          .i_1
+   217                          	defm	""
+   217  0000  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0001  0a                	defb	10
+   217                          
+   217  0002  5365742052544320  	defm	"Set RTC time..."
+              74696d652e2e2e    
+   217  0011  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0012  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0013  00                	defb	0
+   217                          
+   217  0014  456e746572205959  	defm	"Enter YY MM DD HH MM SS (2 dig"
+              204d4d2044442048  
+              48204d4d20535320  
+              283220646967      
+   217  0032  6974732065616368  	defm	"its each)"
+              29                
+   217  003b  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  003c  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  003d  00                	defb	0
+   217                          
+   217  003e  596561723a20      	defm	"Year: "
+   217  0044  00                	defb	0
+   217                          
+   217  0045  4d6f6e74683a20    	defm	"Month: "
+   217  004c  00                	defb	0
+   217                          
+   217  004d  4461793a20        	defm	"Day: "
+   217  0052  00                	defb	0
+   217                          
+   217  0053  486f75723a20      	defm	"Hour: "
+   217  0059  00                	defb	0
+   217                          
+   217  005a  4d696e7574653a20  	defm	"Minute: "
+   217  0062  00                	defb	0
+   217                          
+   217  0063  5365636f6e643a20  	defm	"Second: "
+   217  006b  00                	defb	0
+   217                          
+   217  006c  54696d6520736574  	defm	"Time set successfully!"
+              2073756363657373  
+              66756c6c7921      
+   217  0082  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0083  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0084  00                	defb	0
+   217                          
+   217  0085  4572726f72207365  	defm	"Error setting time!"
+              7474696e67207469  
+              6d6521            
+   217  0098  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0099  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  009a  00                	defb	0
+   217                          
+   217                          	defm	""
+   217  009b  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  009c  0a                	defb	10
+   217                          
+   217  009d  3d3d3d2052544320  	defm	"=== RTC Hardware Test ==="
+              4861726477617265  
+              2054657374203d3d  
+              3d                
+   217  00b6  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  00b7  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  00b8  00                	defb	0
+   217                          
+   217  00b9  525443206e6f7420  	defm	"RTC not detected via HBIOS"
+              6465746563746564  
+              2076696120484249  
+              4f53              
+   217  00d3  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  00d4  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  00d5  00                	defb	0
+   217                          
+   217  00d6  5254432064657465  	defm	"RTC detected via HBIOS"
+              6374656420766961  
+              204842494f53      
+   217  00ec  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  00ed  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  00ee  00                	defb	0
+   217                          
+   217  00ef  4842494f533a20    	defm	"HBIOS: "
+   217  00f6  00                	defb	0
+   217                          
+   217  00f7  577261707065723a  	defm	"Wrapper: "
+              20                
+   217  0100  00                	defb	0
+   217                          
+   217  0101  202866756c6c3a20  	defm	" (full: "
+   217  0109  00                	defb	0
+   217                          
+   217  010a  526177204842494f  	defm	"Raw HBIOS data (BCD): "
+              5320646174612028  
+              424344293a20      
+   217  0120  00                	defb	0
+   217                          
+   217  0121  43757272656e7420  	defm	"Current RTC time: "
+              5254432074696d65  
+              3a20              
+   217  0133  00                	defb	0
+   217                          
+   217  0134  4572726f72207265  	defm	"Error reading RTC time"
+              6164696e67205254  
+              432074696d65      
+   217  014a  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  014b  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  014c  00                	defb	0
+   217                          
+   217  014d  5254432068617264  	defm	"RTC hardware test completed."
+              7761726520746573  
+              7420636f6d706c65  
+              7465642e          
+   217  0169  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  016a  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  016b  00                	defb	0
+   217                          
+   217  016c  507265737320616e  	defm	"Press any key to continue..."
+              79206b657920746f  
+              20636f6e74696e75  
+              652e2e2e          
+   217  0188  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0189  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  018a  00                	defb	0
+   217                          
+   217                          	defm	""
+   217  018b  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  018c  0a                	defb	10
+   217                          
+   217  018d  3d3d3d2052544320  	defm	"=== RTC Calibration Utility He"
+              43616c6962726174  
+              696f6e205574696c  
+              697479204865      
+   217  01ab  6c70203d3d3d      	defm	"lp ==="
+   217  01b1  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  01b2  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  01b3  00                	defb	0
+   217                          
+   217  01b4  436f6d6d616e6473  	defm	"Commands:"
+              3a                
+   217  01bd  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  01be  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  01bf  00                	defb	0
+   217                          
+   217  01c0  202054202d204469  	defm	"  T - Display current time"
+              73706c6179206375  
+              7272656e74207469  
+              6d65              
+   217  01da  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  01db  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  01dc  00                	defb	0
+   217                          
+   217  01dd  202053202d205365  	defm	"  S - Set RTC time"
+              7420525443207469  
+              6d65              
+   217  01ef  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  01f0  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  01f1  00                	defb	0
+   217                          
+   217  01f2  202048202d204861  	defm	"  H - Hardware test"
+              7264776172652074  
+              657374            
+   217  0205  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0206  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0207  00                	defb	0
+   217                          
+   217  0208  20203f202d205368  	defm	"  ? - Show this help"
+              6f77207468697320  
+              68656c70          
+   217  021c  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  021d  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  021e  00                	defb	0
+   217                          
+   217  021f  202051202d205175  	defm	"  Q - Quit program"
+              69742070726f6772  
+              616d              
+   217  0231  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0232  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0233  00                	defb	0
+   217                          
+   217                          	defm	""
+   217  0234  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0235  0a                	defb	10
+   217                          
+   217  0236  466f722052433230  	defm	"For RC2014 with RomWBW HBIOS R"
+              3134207769746820  
+              526f6d5742572048  
+              42494f532052      
+   217  0254  544320737570706f  	defm	"TC support"
+              7274              
+   217  025e  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  025f  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0260  00                	defb	0
+   217                          
+   217  0261  5254432043616c69  	defm	"RTC Calibration Utility v0.1.7"
+              62726174696f6e20  
+              5574696c69747920  
+              76302e312e37      
+   217  027f  20284842494f5329  	defm	" (HBIOS)"
+   217  0287  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0288  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0289  00                	defb	0
+   217                          
+   217  028a  3d3d3d3d3d3d3d3d  	defm	"=============================="
+              3d3d3d3d3d3d3d3d  
+              3d3d3d3d3d3d3d3d  
+              3d3d3d3d3d3d      
+   217  02a8  3d3d3d3d3d3d3d3d  	defm	"=========="
+              3d3d              
+   217  02b2  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  02b3  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  02b4  00                	defb	0
+   217                          
+   217  02b5  4552524f523a2052  	defm	"ERROR: RTC not available via H"
+              5443206e6f742061  
+              7661696c61626c65  
+              207669612048      
+   217  02d3  42494f5321        	defm	"BIOS!"
+   217  02d8  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  02d9  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  02da  00                	defb	0
+   217                          
+   217  02db  506c656173652063  	defm	"Please check:"
+              6865636b3a        
+   217  02e8  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  02e9  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  02ea  00                	defb	0
+   217                          
+   217  02eb  2d20525443206861  	defm	"- RTC hardware is properly con"
+              7264776172652069  
+              732070726f706572  
+              6c7920636f6e      
+   217  0309  6669677572656420  	defm	"figured in RomWBW"
+              696e20526f6d5742  
+              57                
+   217  031a  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  031b  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  031c  00                	defb	0
+   217                          
+   217  031d  2d20525443206472  	defm	"- RTC driver is loaded in HBIO"
+              6976657220697320  
+              6c6f616465642069  
+              6e204842494f      
+   217  033b  53                	defm	"S"
+   217  033c  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  033d  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  033e  00                	defb	0
+   217                          
+   217  033f  2d20525443206861  	defm	"- RTC hardware is functioning"
+              7264776172652069  
+              732066756e637469  
+              6f6e696e67        
+   217  035c  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  035d  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  035e  00                	defb	0
+   217                          
+   217  035f  5254432064657465  	defm	"RTC detected via HBIOS and rea"
+              6374656420766961  
+              204842494f532061  
+              6e6420726561      
+   217  037d  64792e            	defm	"dy."
+   217  0380  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0381  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0382  00                	defb	0
+   217                          
+   217                          	defm	""
+   217  0383  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0384  0a                	defb	10
+   217                          
+   217  0385  2d2d2d204d61696e  	defm	"--- Main Menu ---"
+              204d656e75202d2d  
+              2d                
+   217  0396  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  0397  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0398  00                	defb	0
+   217                          
+   217  0399  5429696d65202053  	defm	"T)ime  S)et  H)ardware test  ?"
+              2965742020482961  
+              7264776172652074  
+              65737420203f      
+   217  03b7  2948656c70202051  	defm	")Help  Q)uit"
+              29756974          
+   217  03c3  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  03c4  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  03c5  00                	defb	0
+   217                          
+   217  03c6  436f6d6d616e643a  	defm	"Command: "
+              20                
+   217  03cf  00                	defb	0
+   217                          
+   217  03d0  43757272656e7420  	defm	"Current time: "
+              74696d653a20      
+   217  03de  00                	defb	0
+   217                          
+   217  03df  476f6f6462796521  	defm	"Goodbye!"
+   217  03e7  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  03e8  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  03e9  00                	defb	0
+   217                          
+   217  03ea  556e6b6e6f776e20  	defm	"Unknown command. Press '?' for"
+              636f6d6d616e642e  
+              2050726573732027  
+              3f2720666f72      
+   217  0408  2068656c702e      	defm	" help."
+   217  040e  0d                	defb	13
+   217                          
+   217                          	defm	""
+   217  040f  0a                	defb	10
+   217                          
+   217                          	defm	""
+   217  0410  00                	defb	0
+   217                          
+   217                          
+   217                          ; --- Start of Static Variables ---
+   217                          
+   217                          	SECTION	bss_compiler
+   217  0000  000000000000      ._datetime	defs	6
+   217                          	SECTION	code_compiler
+   217                          
+   217                          
+   217                          ; --- Start of Scope Defns ---
+   217                          
+   217                          	GLOBAL	_cRawIo
+   217                          	GLOBAL	_hbios_rtc_detect
+   217                          	GLOBAL	_hbios_rtc_get_time
+   217                          	GLOBAL	_hbios_rtc_set_time
+   217                          	GLOBAL	_hbios_rtc_test
+   217                          	GLOBAL	_putchar
+   217                          	GLOBAL	_bcdToDecimal
+   217                          	GLOBAL	_decimalToBcd
+   217                          	GLOBAL	_convertFromBcd
+   217                          	GLOBAL	_convertToBcd
+   217                          	GLOBAL	_datetime
+   217                          	GLOBAL	_printStr
+   217                          	GLOBAL	_printChar
+   217                          	GLOBAL	_printNum
+   217                          	GLOBAL	_printNum2
+   217                          	GLOBAL	_printDateTime
+   217                          	GLOBAL	_readDigit
+   217                          	GLOBAL	_readTwoDigits
+   217                          	GLOBAL	_setTime
+   217                          	GLOBAL	_printHex
+   217                          	GLOBAL	_testRtc
+   217                          	GLOBAL	_showHelp
+   217                          	GLOBAL	_main
+   217                          
+   217                          
+   217                          ; --- End of Scope Defns ---
+   217                          
+   217                          
+   217                          ; --- End of Compilation ---
+   217                          

@@ -1,0 +1,18 @@
+/tmp/tmpXX3nFEqd.asm:
+     1                          MODULE cpm_asm
+     2                          LINE 0, "cpm.asm"
+cpm.asm:
+                                
+     1                          	PUBLIC	_cRawIo
+     2                          
+     3                          	SECTION code_user
+     4                          
+     5                          ; char cRawIo(void)
+     6                          ; check for keypress and return, otherwise 0
+     7                          _cRawIo:
+     8  0000  0e06              	LD	C, 6
+     9  0002  1eff              	LD	E, $FF
+    10  0004  cd0500            	CALL	5
+    11  0007  6f                	LD	L, A
+    12  0008  c9                	RET
+    13                          

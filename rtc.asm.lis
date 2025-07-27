@@ -1,0 +1,222 @@
+/tmp/tmpXXJUT9Od.asm:
+     1                          MODULE rtc_asm
+     2                          LINE 0, "rtc.asm"
+rtc.asm:
+                                
+     1                          	PUBLIC	_hbios_rtc_detect, _hbios_rtc_get_time, _hbios_rtc_set_time, _hbios_rtc_test
+     2                          
+     3                          	SECTION code_user
+     4                          
+     5                          ; HBIOS function constants from hbios.inc
+     6                          BF_RTC		EQU	20h		; RTC function
+     7                          BF_RTCGETTIM	EQU	BF_RTC + 0	; Get time subfunction
+     8                          BF_RTCSETTIM	EQU	BF_RTC + 1	; Set time subfunction
+     9                          
+    10                          ; HBIOS entry points
+    11                          HB_INVOKE	EQU	0FFF0h		; HBIOS invoke entry point
+    12                          
+    13                          
+    14                          ;
+    15                          ; Detect RTC presence by attempting to get time
+    16                          ; int hbios_rtc_detect(void)
+    17                          ; Returns: 1 if RTC detected, 0 if not
+    18                          ;
+    19                          _hbios_rtc_detect:
+    20  0000  f5                	PUSH	AF
+    21  0001  c5                	PUSH	BC
+    22  0002  d5                	PUSH	DE
+    23  0003  e5                	PUSH	HL
+    24                          
+    25                          	; Try to get time to test RTC presence (with unit 0)
+    26  0004  0620              	LD	B, 20h			; HBIOS RTC get time function
+    27  0006  1600              	LD	D, 0			; Unit 0
+    28  0008  210000            	LD	HL, TIME_BUF		; Point to temp buffer
+    29  000b  cf                	RST	08			; Call HBIOS via RST
+    30                          
+    31                          	; Check result - A contains error code (0 = success)
+    32  000c  b7                	OR	A			; Test A for zero
+    33  000d  2805              	JR	Z, _detect_success	; Jump if successful (A=0)
+    34                          
+    35                          	; RTC not available or error
+    36  000f  210000            	LD	HL, 0			; Return 0 (not detected)
+    37  0012  1803              	JR	_detect_exit
+    38                          
+    39                          _detect_success:
+    40  0014  210100            	LD	HL, 1			; Return 1 (detected)
+    41                          
+    42                          _detect_exit:
+    43  0017  e1                	POP	HL
+    44  0018  d1                	POP	DE
+    45  0019  c1                	POP	BC
+    46  001a  f1                	POP	AF
+    47  001b  c9                	RET
+    48                          
+    49                          ;
+    50                          ; Get time from HBIOS RTC
+    51                          ; int hbios_rtc_get_time(RTC_Time *time)
+    52                          ; HL points to RTC_Time structure
+    53                          ; Returns: 0 on success, -1 on error
+    54                          ;
+    55                          _hbios_rtc_get_time:
+    56  001c  c5                	PUSH	BC
+    57  001d  d5                	PUSH	DE
+    58  001e  dde5              	PUSH	IX			; Use IX to save structure pointer safely
+    59                          
+    60                          	; Save structure pointer in IX
+    61  0020  e5dde1            	LD	IX, HL			; IX = structure pointer
+    62                          
+    63                          	; Call HBIOS to get time - buffer format is YYMMDDHHMMSS (BCD)
+    64  0023  0620              	LD	B, 20h			; HBIOS RTC get time function
+    65  0025  1600              	LD	D, 0			; Unit 0
+    66  0027  210000            	LD	HL, TIME_BUF		; Point to temp buffer
+    67  002a  cf                	RST	08			; Call HBIOS via RST
+    68                          
+    69                          	; Check result
+    70  002b  b7                	OR	A			; Test A for zero
+    71  002c  2029              	JR	NZ, _get_time_error	; Jump if error
+    72                          
+    73                          	; Success - convert from HBIOS format to our format
+    74                          	; HBIOS: [0]=YY [1]=MM [2]=DD [3]=HH [4]=MM [5]=SS
+    75                          	; Our:   [0]=SS [1]=MM [2]=HH [3]=DD [4]=MM [5]=YY
+    76                          
+    77                          	; Store seconds (HBIOS byte 5 -> our byte 0)
+    78  002e  3a0500            	LD	A, (TIME_BUF+5)
+    79  0031  dd7700            	LD	(IX+0), A
+    80                          
+    81                          	; Store minutes (HBIOS byte 4 -> our byte 1)
+    82  0034  3a0400            	LD	A, (TIME_BUF+4)
+    83  0037  dd7701            	LD	(IX+1), A
+    84                          
+    85                          	; Store hours (HBIOS byte 3 -> our byte 2)
+    86  003a  3a0300            	LD	A, (TIME_BUF+3)
+    87  003d  dd7702            	LD	(IX+2), A
+    88                          
+    89                          	; Store date (HBIOS byte 2 -> our byte 3)
+    90  0040  3a0200            	LD	A, (TIME_BUF+2)
+    91  0043  dd7703            	LD	(IX+3), A
+    92                          
+    93                          	; Store month (HBIOS byte 1 -> our byte 4)
+    94  0046  3a0100            	LD	A, (TIME_BUF+1)
+    95  0049  dd7704            	LD	(IX+4), A
+    96                          
+    97                          	; Store year (HBIOS byte 0 -> our byte 5)
+    98  004c  3a0000            	LD	A, (TIME_BUF+0)
+    99  004f  dd7705            	LD	(IX+5), A
+   100                          
+   101  0052  210000            	LD	HL, 0			; Return 0 (success)
+   102  0055  1803              	JR	_get_time_exit
+   103                          
+   104                          _get_time_error:
+   105  0057  6f                	LD	L, A			; Return HBIOS error code
+   106  0058  2600              	LD	H, 0			; Clear high byte
+   107                          
+   108                          _get_time_exit:
+   109  005a  dde1              	POP	IX
+   110  005c  d1                	POP	DE
+   111  005d  c1                	POP	BC
+   112  005e  c9                	RET
+   113                          
+   114                          ;
+   115                          ; Set time to HBIOS RTC
+   116                          ; int hbios_rtc_set_time(const RTC_Time *time)
+   117                          ; HL points to RTC_Time structure
+   118                          ; Returns: 0 on success, -1 on error
+   119                          ;
+   120                          _hbios_rtc_set_time:
+   121  005f  c5                	PUSH	BC
+   122  0060  d5                	PUSH	DE
+   123  0061  e5                	PUSH	HL			; Save structure pointer
+   124                          
+   125                          	; Convert from our format (SSMMHHDDMMYY) to HBIOS format (YYMMDDHHMMSS)
+   126                          	; Our:   [0]=SS [1]=MM [2]=HH [3]=DD [4]=MM [5]=YY
+   127                          	; HBIOS: [0]=YY [1]=MM [2]=DD [3]=HH [4]=MM [5]=SS
+   128                          
+   129                          	; Store year (our byte 5 -> HBIOS byte 0)
+   130  0062  7e                	LD	A, (HL)			; Skip to year (byte 5)
+   131  0063  23                	INC	HL
+   132  0064  23                	INC	HL
+   133  0065  23                	INC	HL
+   134  0066  23                	INC	HL
+   135  0067  23                	INC	HL
+   136  0068  7e                	LD	A, (HL)			; Get year
+   137  0069  320000            	LD	(TIME_BUF+0), A		; Store in HBIOS buffer
+   138                          
+   139                          	; Restore pointer and get month (our byte 4 -> HBIOS byte 1)
+   140  006c  e1                	POP	HL			; Restore structure pointer
+   141  006d  e5                	PUSH	HL			; Save again
+   142  006e  23                	INC	HL
+   143  006f  23                	INC	HL
+   144  0070  23                	INC	HL
+   145  0071  23                	INC	HL			; Point to month
+   146  0072  7e                	LD	A, (HL)			; Get month
+   147  0073  320100            	LD	(TIME_BUF+1), A		; Store in HBIOS buffer
+   148                          
+   149                          	; Get date (our byte 3 -> HBIOS byte 2)
+   150  0076  2b                	DEC	HL			; Point to date
+   151  0077  7e                	LD	A, (HL)			; Get date
+   152  0078  320200            	LD	(TIME_BUF+2), A		; Store in HBIOS buffer
+   153                          
+   154                          	; Get hours (our byte 2 -> HBIOS byte 3)
+   155  007b  2b                	DEC	HL			; Point to hours
+   156  007c  7e                	LD	A, (HL)			; Get hours
+   157  007d  320300            	LD	(TIME_BUF+3), A		; Store in HBIOS buffer
+   158                          
+   159                          	; Get minutes (our byte 1 -> HBIOS byte 4)
+   160  0080  2b                	DEC	HL			; Point to minutes
+   161  0081  7e                	LD	A, (HL)			; Get minutes
+   162  0082  320400            	LD	(TIME_BUF+4), A		; Store in HBIOS buffer
+   163                          
+   164                          	; Get seconds (our byte 0 -> HBIOS byte 5)
+   165  0085  2b                	DEC	HL			; Point to seconds
+   166  0086  7e                	LD	A, (HL)			; Get seconds
+   167  0087  320500            	LD	(TIME_BUF+5), A		; Store in HBIOS buffer
+   168                          
+   169                          	; Call HBIOS to set time
+   170  008a  0621              	LD	B, 21h			; HBIOS RTC set time function
+   171  008c  1600              	LD	D, 0			; Unit 0
+   172  008e  210000            	LD	HL, TIME_BUF		; Point to HBIOS buffer
+   173  0091  cf                	RST	08			; Call HBIOS via RST
+   174                          
+   175                          	; Check result
+   176  0092  b7                	OR	A			; Test A for zero
+   177  0093  2006              	JR	NZ, _set_time_error	; Jump if error
+   178                          
+   179  0095  e1                	POP	HL			; Restore structure pointer
+   180  0096  210000            	LD	HL, 0			; Return 0 (success)
+   181  0099  1804              	JR	_set_time_exit
+   182                          
+   183                          _set_time_error:
+   184  009b  e1                	POP	HL			; Restore structure pointer
+   185  009c  21ffff            	LD	HL, 0FFFFh		; Return -1 (error)
+   186                          
+   187                          _set_time_exit:
+   188  009f  d1                	POP	DE
+   189  00a0  c1                	POP	BC
+   190  00a1  c9                	RET
+   191                          
+   192                          ;
+   193                          ; Simple test function exactly like working example
+   194                          ; int hbios_rtc_test(void)
+   195                          ; Returns error code directly from HBIOS
+   196                          ;
+   197                          _hbios_rtc_test:
+   198  00a2  d5                	PUSH	DE			; Save DE register
+   199                          
+   200                          	; Try with unit 0 first (most common)
+   201  00a3  0620              	LD	B, 20h			; RTC get time function
+   202  00a5  1600              	LD	D, 0			; Unit 0
+   203  00a7  210000            	LD	HL, TIME_BUF		; Point to buffer
+   204  00aa  cf                	RST	08			; Call HBIOS
+   205                          
+   206                          	; Return error code in HL
+   207  00ab  6f                	LD	L, A			; Return HBIOS error code
+   208  00ac  2600              	LD	H, 0			; Clear high byte
+   209                          
+   210  00ae  d1                	POP	DE			; Restore DE
+   211  00af  c9                	RET
+   212                          
+   213                          	SECTION data_user
+   214                          
+   215                          ; Temporary buffer for HBIOS time format (6 bytes BCD: YYMMDDHHMMSS)
+   216  0000  000000000000      TIME_BUF:	DS	6
+   217                          
