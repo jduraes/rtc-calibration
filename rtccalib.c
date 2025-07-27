@@ -265,30 +265,40 @@ long measureRtcTiming(void) {
     unsigned long loop_count = 0;
     unsigned char start_second, current_second;
     int seconds_elapsed = 0;
-    int timeout_counter = 0;
+    int rtc_result;
     
-    // Get initial RTC time and wait for second boundary
-    printStr("\rTesting: 3");
+    // Get initial RTC time
+    printStr("\rTesting: 3 (getting initial time...)");
     
+    rtc_result = hbios_rtc_get_time(&current_time);
+    if (rtc_result != 0 && rtc_result != 0xB8) {
+        printStr("\rError: Initial RTC read failed (code: ");
+        printHex(rtc_result);
+        printStr(")         ");
+        return 0x8000;
+    }
+    
+    convertFromBcd(&current_time);
+    start_second = current_time.second;
+    
+    printStr("\rTesting: 3 (waiting for second boundary...)");
+    
+    // Wait for next second boundary (with reasonable timeout)
+    int boundary_timeout = 0;
     do {
-        if (hbios_rtc_get_time(&current_time) != 0 && hbios_rtc_get_time(&current_time) != 0xB8) {
-            return 0x8000;  // Error reading RTC
-        }
-        convertFromBcd(&current_time);
-        start_second = current_time.second;
-        timeout_counter++;
-        if (timeout_counter > 100000) return 0x8000;  // Prevent infinite loop
-    } while (0); // Just read once and start
-    
-    // Wait for next second boundary
-    do {
-        if (hbios_rtc_get_time(&current_time) != 0 && hbios_rtc_get_time(&current_time) != 0xB8) {
+        rtc_result = hbios_rtc_get_time(&current_time);
+        if (rtc_result != 0 && rtc_result != 0xB8) {
+            printStr("\rError: RTC read failed during boundary wait         ");
             return 0x8000;
         }
         convertFromBcd(&current_time);
         current_second = current_time.second;
-        timeout_counter++;
-        if (timeout_counter > 200000) return 0x8000;  // Prevent infinite loop
+        
+        boundary_timeout++;
+        if (boundary_timeout > 100000) {
+            printStr("\rError: Timeout waiting for second boundary         ");
+            return 0x8000;
+        }
     } while (current_second == start_second);
     
     // Now we're at a second boundary - start counting
@@ -296,13 +306,17 @@ long measureRtcTiming(void) {
     loop_count = 0;
     seconds_elapsed = 0;
     
+    printStr("\rTesting: 3 (measuring...)");
+    
     // Count loops for exactly 3 RTC seconds
     while (seconds_elapsed < 3) {
         loop_count++;
         
-        // Check RTC every 8192 iterations
-        if ((loop_count & 0x1FFF) == 0) {
-            if (hbios_rtc_get_time(&current_time) != 0 && hbios_rtc_get_time(&current_time) != 0xB8) {
+        // Check RTC every 2048 iterations (very frequent)
+        if ((loop_count & 0x07FF) == 0) {
+            rtc_result = hbios_rtc_get_time(&current_time);
+            if (rtc_result != 0 && rtc_result != 0xB8) {
+                printStr("\rError: RTC read failed during measurement         ");
                 return 0x8000;
             }
             convertFromBcd(&current_time);
@@ -315,16 +329,18 @@ long measureRtcTiming(void) {
                 seconds_elapsed = (60 - start_second) + current_second;
             }
             
-            // Update countdown display
+            // Update countdown display more clearly
             if (seconds_elapsed < 3) {
                 printStr("\rTesting: ");
                 printChar('0' + (3 - seconds_elapsed));
+                printStr(" seconds remaining");
             }
         }
         
-        // Timeout protection
-        if (loop_count > 10000000UL) {
-            return 0x8000;  // Something went wrong
+        // Reasonable timeout protection (increased limit)
+        if (loop_count > 50000000UL) {
+            printStr("\rError: Loop count exceeded maximum         ");
+            return 0x8000;
         }
     }
     
@@ -487,7 +503,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.2.3 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.2.3.1 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
