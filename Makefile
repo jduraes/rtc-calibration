@@ -14,7 +14,7 @@ TARGET_NAME = rtccalib
 
 # Source files
 C_SOURCES = rtccalib.c
-ASM_SOURCES = rtc.asm cpm.asm
+ASM_SOURCES = rtc.asm cpm.asm measure.asm
 HEADERS = rtc.h cpm.h
 
 # Object files

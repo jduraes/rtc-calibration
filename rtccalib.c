@@ -254,6 +254,197 @@ void printHex(unsigned char val) {
     printChar(lo < 10 ? '0' + lo : 'A' + lo - 10);
 }
 
+// Global variables for calibration timing
+static unsigned long cpu_clock = 7372800;  // Default RC2014 CPU clock (7.3728 MHz)
+unsigned long measurement = 0;             // Results from measure_timing
+
+// Measure RTC timing by comparing 3 RTC seconds against CPU time
+// Returns percentage difference * 100 (e.g., 134 = 1.34%), or 0x8000 on error
+long measureRtcTiming(void) {
+    RTC_Time current_time;
+    unsigned long loop_count = 0;
+    unsigned char start_second, current_second;
+    int seconds_elapsed = 0;
+    int timeout_counter = 0;
+    
+    // Get initial RTC time and wait for second boundary
+    printStr("\rTesting: 3");
+    
+    do {
+        if (hbios_rtc_get_time(&current_time) != 0 && hbios_rtc_get_time(&current_time) != 0xB8) {
+            return 0x8000;  // Error reading RTC
+        }
+        convertFromBcd(&current_time);
+        start_second = current_time.second;
+        timeout_counter++;
+        if (timeout_counter > 100000) return 0x8000;  // Prevent infinite loop
+    } while (0); // Just read once and start
+    
+    // Wait for next second boundary
+    do {
+        if (hbios_rtc_get_time(&current_time) != 0 && hbios_rtc_get_time(&current_time) != 0xB8) {
+            return 0x8000;
+        }
+        convertFromBcd(&current_time);
+        current_second = current_time.second;
+        timeout_counter++;
+        if (timeout_counter > 200000) return 0x8000;  // Prevent infinite loop
+    } while (current_second == start_second);
+    
+    // Now we're at a second boundary - start counting
+    start_second = current_second;
+    loop_count = 0;
+    seconds_elapsed = 0;
+    
+    // Count loops for exactly 3 RTC seconds
+    while (seconds_elapsed < 3) {
+        loop_count++;
+        
+        // Check RTC every 8192 iterations
+        if ((loop_count & 0x1FFF) == 0) {
+            if (hbios_rtc_get_time(&current_time) != 0 && hbios_rtc_get_time(&current_time) != 0xB8) {
+                return 0x8000;
+            }
+            convertFromBcd(&current_time);
+            current_second = current_time.second;
+            
+            // Calculate elapsed seconds (handle minute rollover)
+            if (current_second >= start_second) {
+                seconds_elapsed = current_second - start_second;
+            } else {
+                seconds_elapsed = (60 - start_second) + current_second;
+            }
+            
+            // Update countdown display
+            if (seconds_elapsed < 3) {
+                printStr("\rTesting: ");
+                printChar('0' + (3 - seconds_elapsed));
+            }
+        }
+        
+        // Timeout protection
+        if (loop_count > 10000000UL) {
+            return 0x8000;  // Something went wrong
+        }
+    }
+    
+    // Estimate CPU cycles (rough approximation)
+    unsigned long measured_cycles = loop_count * 50;  // Each loop ~50 T-states
+    
+    // Expected cycles for 3 seconds
+    unsigned long expected_cycles = cpu_clock * 3;
+    
+    // Calculate percentage difference * 100
+    long diff = (long)measured_cycles - (long)expected_cycles;
+    return (diff * 10000L) / (long)expected_cycles;
+}
+
+// Print a 32-bit number in decimal
+void printLong(unsigned long num) {
+    if (num >= 10) {
+        printLong(num / 10);
+    }
+    printChar('0' + (num % 10));
+}
+
+// Print a 32-bit number with comma separators
+void printLongWithCommas(unsigned long num) {
+    if (num >= 1000) {
+        printLongWithCommas(num / 1000);
+        printChar(',');
+        // Print 3 digits with leading zeros
+        unsigned long remainder = num % 1000;
+        if (remainder < 100) printChar('0');
+        if (remainder < 10) printChar('0');
+        printLong(remainder);
+    } else {
+        printLong(num);
+    }
+}
+
+// Print difference with sign
+void printSignedDiff(long diff) {
+    if (diff < 0) {
+        printChar('-');
+        printLong(-diff);
+    } else if (diff > 0) {
+        printChar('+');
+        printLong(diff);
+    } else {
+        printChar('0');
+    }
+}
+
+// Print percentage with 2 decimal places (multiplied by 100)
+void printPercentage(long pct_100) {
+    if (pct_100 < 0) {
+        printChar('-');
+        pct_100 = -pct_100;
+    }
+    
+    unsigned long whole = pct_100 / 100;
+    unsigned long frac = pct_100 % 100;
+    
+    printLong(whole);
+    printChar('.');
+    if (frac < 10) printChar('0');
+    printLong(frac);
+    printChar('%');
+}
+
+// RTC Calibration using CPU clock as reference
+void calibrateRtc(void) {
+    char key;
+    
+    printStr("\r\n=== RTC Calibration Mode ===\r\n");
+    printStr("Using CPU clock as reference\r\n");
+    printStr("CPU Clock: ");
+    printLongWithCommas(cpu_clock);
+    printStr(" Hz\r\n\r\n");
+    
+    printStr("This will measure RTC timing accuracy by comparing\r\n");
+    printStr("the RTC's 1-second tick against the CPU clock.\r\n\r\n");
+    
+    printStr("Instructions:\r\n");
+    printStr("- Positive % = RTC running FAST\r\n");
+    printStr("- Negative % = RTC running SLOW\r\n");
+    printStr("- 0.00% = RTC perfectly in sync\r\n");
+    printStr("- Press ESC to stop\r\n\r\n");
+    
+    // Continuous calibration loop - no pause, start immediately
+    while (1) {
+        // Check for ESC key to abort
+        key = cRawIo();
+        if (key == 27) {
+            printStr("\r\nCalibration stopped\r\n");
+            break;
+        }
+        
+        // Measure actual RTC timing (returns percentage * 100)
+        long pct_100 = measureRtcTiming();
+        
+        if (pct_100 == 0x8000) {
+            printStr("\rError: Could not measure RTC timing     ");
+            continue;
+        }
+        
+        // Display result (overwrite previous line)
+        printStr("\rRTC Timing: ");
+        
+        if (pct_100 == 0) {
+            printStr("Perfect sync (0.00%)         ");
+        } else {
+            if (pct_100 > 0) {
+                printStr("FAST by ");
+            } else {
+                printStr("SLOW by ");
+            }
+            printPercentage(pct_100);
+            printStr("         ");  // Clear any leftover text
+        }
+    }
+}
+
 // Test RTC functionality
 void testRtc(void) {
     RTC_Time test_time = {0, 0, 0, 0, 0, 0};
@@ -286,6 +477,7 @@ void showHelp(void) {
     printStr("  T - Display current time\r\n");
     printStr("  S - Set RTC time\r\n");
     printStr("  H - Hardware test\r\n");
+    printStr("  C - Calibrate RTC speed\r\n");
     printStr("  ? - Show this help\r\n");
     printStr("  Q - Quit program\r\n");
     printStr("\r\nFor RC2014 with RomWBW HBIOS RTC support\r\n");
@@ -295,7 +487,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.1.10 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.2.3 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
@@ -314,7 +506,7 @@ void main(void) {
     // Main menu loop
     while (1) {
         printStr("\r\n--- Main Menu ---\r\n");
-        printStr("T)ime  S)et  H)ardware test  ?)Help  Q)uit\r\n");
+    printStr("T)ime  S)et  H)ardware test  C)alibrate  ?)Help  Q)uit\r\n");
         printStr("Command: ");
         
         // Wait for command
@@ -345,6 +537,11 @@ void main(void) {
             case 'H':
             case 'h':
                 testRtc();
+                break;
+                
+            case 'C':
+            case 'c':
+                calibrateRtc();
                 break;
                 
             case '?':
