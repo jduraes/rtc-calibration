@@ -258,101 +258,78 @@ void printHex(unsigned char val) {
 static unsigned long cpu_clock = 7372800;  // Default RC2014 CPU clock (7.3728 MHz)
 unsigned long measurement = 0;             // Results from measure_timing
 
-// Measure RTC timing by comparing 3 RTC seconds against CPU time
+// Simplified RTC timing measurement for debugging
 // Returns percentage difference * 100 (e.g., 134 = 1.34%), or 0x8000 on error
 long measureRtcTiming(void) {
-    RTC_Time current_time;
+    RTC_Time time1, time2;
     unsigned long loop_count = 0;
     unsigned char start_second, current_second;
-    int seconds_elapsed = 0;
     int rtc_result;
     
-    // Get initial RTC time
-    printStr("\rTesting: 3 (getting initial time...)");
+    printStr("\rStep 1: Reading RTC...");
     
-    rtc_result = hbios_rtc_get_time(&current_time);
+    // Get initial RTC time
+    rtc_result = hbios_rtc_get_time(&time1);
     if (rtc_result != 0 && rtc_result != 0xB8) {
-        printStr("\rError: Initial RTC read failed (code: ");
-        printHex(rtc_result);
-        printStr(")         ");
+        printStr("\rRTC read failed!");
         return 0x8000;
     }
     
-    convertFromBcd(&current_time);
-    start_second = current_time.second;
+    convertFromBcd(&time1);
+    start_second = time1.second;
     
-    printStr("\rTesting: 3 (waiting for second boundary...)");
+    printStr("\rStep 2: Waiting for second change...");
     
-    // Wait for next second boundary (with reasonable timeout)
-    int boundary_timeout = 0;
+    // Wait for second to change (simple approach)
+    int timeout = 0;
     do {
-        rtc_result = hbios_rtc_get_time(&current_time);
+        rtc_result = hbios_rtc_get_time(&time2);
         if (rtc_result != 0 && rtc_result != 0xB8) {
-            printStr("\rError: RTC read failed during boundary wait         ");
+            printStr("\rRTC read failed during wait!");
             return 0x8000;
         }
-        convertFromBcd(&current_time);
-        current_second = current_time.second;
+        convertFromBcd(&time2);
+        current_second = time2.second;
         
-        boundary_timeout++;
-        if (boundary_timeout > 100000) {
-            printStr("\rError: Timeout waiting for second boundary         ");
+        timeout++;
+        if (timeout > 200000) {
+            printStr("\rTimeout waiting for second!");
             return 0x8000;
         }
     } while (current_second == start_second);
     
-    // Now we're at a second boundary - start counting
+    printStr("\rStep 3: Counting loops...");
+    
+    // Now count loops for exactly 1 second (simplified)
     start_second = current_second;
     loop_count = 0;
-    seconds_elapsed = 0;
     
-    printStr("\rTesting: 3 (measuring...)");
-    
-    // Count loops for exactly 3 RTC seconds
-    while (seconds_elapsed < 3) {
+    do {
         loop_count++;
         
-        // Check RTC every 2048 iterations (very frequent)
-        if ((loop_count & 0x07FF) == 0) {
-            rtc_result = hbios_rtc_get_time(&current_time);
+        // Check RTC every 8192 iterations
+        if ((loop_count & 0x1FFF) == 0) {
+            rtc_result = hbios_rtc_get_time(&time2);
             if (rtc_result != 0 && rtc_result != 0xB8) {
-                printStr("\rError: RTC read failed during measurement         ");
+                printStr("\rRTC read failed during count!");
                 return 0x8000;
             }
-            convertFromBcd(&current_time);
-            current_second = current_time.second;
-            
-            // Calculate elapsed seconds (handle minute rollover)
-            if (current_second >= start_second) {
-                seconds_elapsed = current_second - start_second;
-            } else {
-                seconds_elapsed = (60 - start_second) + current_second;
-            }
-            
-            // Update countdown display more clearly
-            if (seconds_elapsed < 3) {
-                printStr("\rTesting: ");
-                printChar('0' + (3 - seconds_elapsed));
-                printStr(" seconds remaining");
-            }
+            convertFromBcd(&time2);
+            current_second = time2.second;
         }
         
-        // Reasonable timeout protection (increased limit)
-        if (loop_count > 50000000UL) {
-            printStr("\rError: Loop count exceeded maximum         ");
+        // Safety timeout
+        if (loop_count > 10000000UL) {
+            printStr("\rLoop timeout!");
             return 0x8000;
         }
-    }
+        
+    } while (current_second == start_second);
     
-    // Estimate CPU cycles (rough approximation)
-    unsigned long measured_cycles = loop_count * 50;  // Each loop ~50 T-states
+    printStr("\rStep 4: Calculating result...");
     
-    // Expected cycles for 3 seconds
-    unsigned long expected_cycles = cpu_clock * 3;
-    
-    // Calculate percentage difference * 100
-    long diff = (long)measured_cycles - (long)expected_cycles;
-    return (diff * 10000L) / (long)expected_cycles;
+    // Simple calculation - just return a test value for now
+    return 123;  // Fixed test value to see if we get this far
 }
 
 // Print a 32-bit number in decimal
@@ -503,7 +480,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.2.3.1 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.2.3.2 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
