@@ -277,9 +277,6 @@ void testRtc(void) {
     } else {
         printStr("Error reading RTC time\r\n");
     }
-    
-    printStr("\r\nPress any key to continue...\r\n");
-    while (cRawIo() == 0) { }
 }
 
 // Display help
@@ -292,8 +289,6 @@ void showHelp(void) {
     printStr("  ? - Show this help\r\n");
     printStr("  Q - Quit program\r\n");
     printStr("\r\nFor RC2014 with RomWBW HBIOS RTC support\r\n");
-    printStr("Press any key to continue...\r\n");
-    while (cRawIo() == 0) { }
 }
 
 void main(void) {
