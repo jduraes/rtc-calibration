@@ -90,58 +90,160 @@ void printDateTime(RTC_Time *dt) {
     printNum2(dt->second);
 }
 
-unsigned char readDigit(void) {
+// Read a string with ESC abort capability
+// Returns 1 if ESC pressed (abort), 0 if string completed
+int readString(char *buffer, int maxLen) {
+    int pos = 0;
     char ch;
-    while (1) {
+    
+    while (pos < maxLen - 1) {
         ch = cRawIo();
-        if (ch >= '0' && ch <= '9') {
+        if (ch == 0) continue;  // No key pressed
+        
+        if (ch == 27) {  // ESC key
+            return 1;  // Abort
+        }
+        
+        if (ch == 13 || ch == 10) {  // Enter key
+            buffer[pos] = '\0';
+            printStr("\r\n");
+            return 0;  // Success
+        }
+        
+        if (ch == 8 || ch == 127) {  // Backspace
+            if (pos > 0) {
+                pos--;
+                printStr("\b \b");  // Backspace, space, backspace
+            }
+            continue;
+        }
+        
+        // Accept printable characters
+        if (ch >= 32 && ch <= 126) {
+            buffer[pos] = ch;
+            pos++;
             printChar(ch);
-            return ch - '0';
         }
     }
+    
+    buffer[pos] = '\0';
+    return 0;
 }
 
-unsigned char readTwoDigits(void) {
-    unsigned char tens, ones;
-    tens = readDigit();
-    ones = readDigit();
-    return tens * 10 + ones;
+// Parse date string in dd/mm/yyyy format
+// Returns 1 on success, 0 on error
+int parseDate(char *dateStr, unsigned char *day, unsigned char *month, unsigned char *year) {
+    int d, m, y;
+    
+    // Simple parsing: expect exactly dd/mm/yyyy format
+    if (dateStr[2] != '/' || dateStr[5] != '/') return 0;
+    if (dateStr[0] < '0' || dateStr[0] > '9') return 0;
+    if (dateStr[1] < '0' || dateStr[1] > '9') return 0;
+    if (dateStr[3] < '0' || dateStr[3] > '9') return 0;
+    if (dateStr[4] < '0' || dateStr[4] > '9') return 0;
+    if (dateStr[6] < '0' || dateStr[6] > '9') return 0;
+    if (dateStr[7] < '0' || dateStr[7] > '9') return 0;
+    if (dateStr[8] < '0' || dateStr[8] > '9') return 0;
+    if (dateStr[9] < '0' || dateStr[9] > '9') return 0;
+    if (dateStr[10] != '\0') return 0;  // Must be exactly 10 chars
+    
+    d = (dateStr[0] - '0') * 10 + (dateStr[1] - '0');
+    m = (dateStr[3] - '0') * 10 + (dateStr[4] - '0');
+    y = (dateStr[6] - '0') * 1000 + (dateStr[7] - '0') * 100 + 
+        (dateStr[8] - '0') * 10 + (dateStr[9] - '0');
+    
+    // Basic validation
+    if (d < 1 || d > 31) return 0;
+    if (m < 1 || m > 12) return 0;
+    if (y < 2000 || y > 2099) return 0;  // We only support 20xx years
+    
+    *day = d;
+    *month = m;
+    *year = y - 2000;  // Store as 2-digit year
+    return 1;
 }
 
-// Set RTC time
+// Parse time string in HH:MM:SS format
+// Returns 1 on success, 0 on error
+int parseTime(char *timeStr, unsigned char *hour, unsigned char *minute, unsigned char *second) {
+    int h, m, s;
+    
+    // Simple parsing: expect exactly HH:MM:SS format
+    if (timeStr[2] != ':' || timeStr[5] != ':') return 0;
+    if (timeStr[0] < '0' || timeStr[0] > '9') return 0;
+    if (timeStr[1] < '0' || timeStr[1] > '9') return 0;
+    if (timeStr[3] < '0' || timeStr[3] > '9') return 0;
+    if (timeStr[4] < '0' || timeStr[4] > '9') return 0;
+    if (timeStr[6] < '0' || timeStr[6] > '9') return 0;
+    if (timeStr[7] < '0' || timeStr[7] > '9') return 0;
+    if (timeStr[8] != '\0') return 0;  // Must be exactly 8 chars
+    
+    h = (timeStr[0] - '0') * 10 + (timeStr[1] - '0');
+    m = (timeStr[3] - '0') * 10 + (timeStr[4] - '0');
+    s = (timeStr[6] - '0') * 10 + (timeStr[7] - '0');
+    
+    // Basic validation
+    if (h > 23) return 0;
+    if (m > 59) return 0;
+    if (s > 59) return 0;
+    
+    *hour = h;
+    *minute = m;
+    *second = s;
+    return 1;
+}
+
+// Set RTC time with new format
 void setTime(void) {
-    printStr("\r\nSet RTC time...\r\n");
-    printStr("Enter YY MM DD HH MM SS (2 digits each)\r\n");
-
-    printStr("Year: ");
-    datetime.year = readTwoDigits();
-    printStr("\r\n");
-
-    printStr("Month: ");
-    datetime.month = readTwoDigits();
-    printStr("\r\n");
-
-    printStr("Day: ");
-    datetime.date = readTwoDigits();
-    printStr("\r\n");
-
-    printStr("Hour: ");
-    datetime.hour = readTwoDigits();
-    printStr("\r\n");
-
-    printStr("Minute: ");
-    datetime.minute = readTwoDigits();
-    printStr("\r\n");
-
-    printStr("Second: ");
-    datetime.second = readTwoDigits();
-    printStr("\r\n");
-
+    char dateBuffer[20];
+    char timeBuffer[20];
+    unsigned char day, month, year, hour, minute, second;
+    
+    printStr("\r\n=== Set RTC Time ===\r\n");
+    printStr("Enter date and time (ESC to abort)\r\n\r\n");
+    
+    // Get date in dd/mm/yyyy format
+    printStr("Date (dd/mm/yyyy): ");
+    if (readString(dateBuffer, sizeof(dateBuffer))) {
+        printStr("Aborted\r\n");
+        return;
+    }
+    
+    if (!parseDate(dateBuffer, &day, &month, &year)) {
+        printStr("Invalid date format. Use dd/mm/yyyy\r\n");
+        return;
+    }
+    
+    // Get time in HH:MM:SS format
+    printStr("Time (HH:MM:SS): ");
+    if (readString(timeBuffer, sizeof(timeBuffer))) {
+        printStr("Aborted\r\n");
+        return;
+    }
+    
+    if (!parseTime(timeBuffer, &hour, &minute, &second)) {
+        printStr("Invalid time format. Use HH:MM:SS\r\n");
+        return;
+    }
+    
+    // Set the datetime structure
+    datetime.date = day;
+    datetime.month = month;
+    datetime.year = year;
+    datetime.hour = hour;
+    datetime.minute = minute;
+    datetime.second = second;
+    
+    // Convert to BCD and set the RTC
     convertToBcd(&datetime);
     if (hbios_rtc_set_time(&datetime) == 0) {
-        printStr("Time set successfully!\r\n");
+        printStr("\r\nTime set successfully to: ");
+        // Convert back to decimal for display
+        convertFromBcd(&datetime);
+        printDateTime(&datetime);
+        printStr("\r\n");
     } else {
-        printStr("Error setting time!\r\n");
+        printStr("\r\nError setting RTC time!\r\n");
     }
 }
 
@@ -198,7 +300,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.1.8 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.1.9 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
