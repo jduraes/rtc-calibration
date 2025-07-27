@@ -1,8 +1,7 @@
 #include "ansi.h"
-#include "cpm.h"
+#include <stdio.h>
 
-// Use our CP/M putchar from rtccalib.c
-extern int putchar(int c);
+// Use Z88DK's built-in putchar - no need for custom implementation
 
 // Helper function to print a number as decimal
 void print_num(int num) {

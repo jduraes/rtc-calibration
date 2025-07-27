@@ -8,8 +8,8 @@ void printLong(unsigned long num);
 // Global ANSI support flag
 int ansi_enabled = 0;
 
-// Simple putchar implementation for CP/M
-int putchar(int c) {
+// Simple character output for CP/M
+int cpm_putchar(int c) {
     __asm
         ld c, 2
         ld e, l    ; Parameter is in L, not A
@@ -59,12 +59,12 @@ RTC_Time datetime;
 // Simple print functions without stdio
 void printStr(char *str) {
     while (*str) {
-        putchar(*str++);
+        cpm_putchar(*str++);
     }
 }
 
 void printChar(char ch) {
-    putchar(ch);
+    cpm_putchar(ch);
 }
 
 void printNum(unsigned char num) {
