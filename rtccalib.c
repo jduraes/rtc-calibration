@@ -259,21 +259,26 @@ static unsigned long cpu_clock = 7372800;  // Default RC2014 CPU clock (7.3728 M
 unsigned long measurement = 0;             // Results from measure_timing
 
 // Ultra-simple calibration to avoid crashes
-// Just shows a simulated reading for now
+// Shows simulated readings with variation for testing
 long measureRtcTiming(void) {
     int i;
+    static int reading_count = 0;
+    long simulated_readings[] = {150, 132, 98, -45, -12, 203, 87, -78, 156, 21};
     
     printStr("\rMeasuring RTC timing...");
     
-    // Simple delay instead of RTC loop to avoid crashes
-    for (i = 0; i < 50000; i++) {
+    // Longer delay to make it readable (about 2 seconds)
+    for (i = 0; i < 200000; i++) {
         // Just a delay loop
     }
     
     printStr("\rMeasurement complete.    ");
     
-    // Return a test percentage (simulate 1.5% fast)
-    return 150;  // 1.50%
+    // Cycle through different simulated readings
+    long result = simulated_readings[reading_count % 10];
+    reading_count++;
+    
+    return result;
 }
 
 // Print a 32-bit number in decimal (non-recursive to avoid stack issues)
@@ -450,7 +455,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.2.4.1 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.2.4.2 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
