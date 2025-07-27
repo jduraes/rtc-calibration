@@ -332,26 +332,52 @@ long measureRtcTiming(void) {
     return 123;  // Fixed test value to see if we get this far
 }
 
-// Print a 32-bit number in decimal
+// Print a 32-bit number in decimal (non-recursive to avoid stack issues)
 void printLong(unsigned long num) {
-    if (num >= 10) {
-        printLong(num / 10);
+    char buffer[12];  // Enough for 32-bit number + null terminator
+    int pos = 0;
+    
+    if (num == 0) {
+        printChar('0');
+        return;
     }
-    printChar('0' + (num % 10));
+    
+    // Build digits in reverse order
+    while (num > 0) {
+        buffer[pos++] = '0' + (num % 10);
+        num /= 10;
+    }
+    
+    // Print in correct order
+    while (pos > 0) {
+        printChar(buffer[--pos]);
+    }
 }
 
-// Print a 32-bit number with comma separators
+// Print a 32-bit number with comma separators (non-recursive)
 void printLongWithCommas(unsigned long num) {
-    if (num >= 1000) {
-        printLongWithCommas(num / 1000);
-        printChar(',');
-        // Print 3 digits with leading zeros
-        unsigned long remainder = num % 1000;
-        if (remainder < 100) printChar('0');
-        if (remainder < 10) printChar('0');
-        printLong(remainder);
-    } else {
-        printLong(num);
+    char buffer[16];  // Enough for number + commas
+    int pos = 0;
+    int digit_count = 0;
+    
+    if (num == 0) {
+        printChar('0');
+        return;
+    }
+    
+    // Build digits in reverse order with commas
+    while (num > 0) {
+        if (digit_count > 0 && digit_count % 3 == 0) {
+            buffer[pos++] = ',';
+        }
+        buffer[pos++] = '0' + (num % 10);
+        num /= 10;
+        digit_count++;
+    }
+    
+    // Print in correct order
+    while (pos > 0) {
+        printChar(buffer[--pos]);
     }
 }
 
@@ -480,7 +506,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.2.3.2 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.2.3.3 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
