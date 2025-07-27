@@ -205,10 +205,9 @@ int interactiveTimeSet(RTC_Time *time) {
     printStr("Press ENTER to set this time, ESC to abort\r\n\r\n");
     
     while (1) {
-        // Display current time (time only, not date)
         printStr("\rTime: ");
         printTimeOnly(time);
-        printStr("     ");  // Extra spaces to clear any leftover characters
+        printStr("     ");
         
         // Wait for key input
         ch = cRawIo();
@@ -236,7 +235,6 @@ int interactiveTimeSet(RTC_Time *time) {
             } else if (ch == 'B') {  // DOWN arrow
                 adjustTimeRounded(time, -10);  // Subtract 10 seconds, rounded
             }
-            // No continue here - let it immediately redraw
         }
         
         // Reset escape sequence state for any other key
@@ -441,14 +439,6 @@ void setTime(void) {
     }
 }
 
-void printHex(unsigned char val) {
-    unsigned char hi = (val >> 4) & 0x0F;
-    unsigned char lo = val & 0x0F;
-    printChar(hi < 10 ? '0' + hi : 'A' + hi - 10);
-    printChar(lo < 10 ? '0' + lo : 'A' + lo - 10);
-}
-
-
 // Print a 32-bit number in decimal (non-recursive to avoid stack issues)
 void printLong(unsigned long num) {
     char buffer[12];  // Enough for 32-bit number + null terminator
@@ -471,45 +461,6 @@ void printLong(unsigned long num) {
     }
 }
 
-// Print a 32-bit number with comma separators (non-recursive)
-void printLongWithCommas(unsigned long num) {
-    char buffer[16];  // Enough for number + commas
-    int pos = 0;
-    int digit_count = 0;
-    
-    if (num == 0) {
-        printChar('0');
-        return;
-    }
-    
-    // Build digits in reverse order with commas
-    while (num > 0) {
-        if (digit_count > 0 && digit_count % 3 == 0) {
-            buffer[pos++] = ',';
-        }
-        buffer[pos++] = '0' + (num % 10);
-        num /= 10;
-        digit_count++;
-    }
-    
-    // Print in correct order
-    while (pos > 0) {
-        printChar(buffer[--pos]);
-    }
-}
-
-// Print difference with sign
-void printSignedDiff(long diff) {
-    if (diff < 0) {
-        printChar('-');
-        printLong(-diff);
-    } else if (diff > 0) {
-        printChar('+');
-        printLong(diff);
-    } else {
-        printChar('0');
-    }
-}
 
 // Print percentage with 2 decimal places (multiplied by 100)
 void printPercentage(long pct_100) {
@@ -574,15 +525,13 @@ long measureRtcTiming(void) {
         }
     } while (current_second == start_second);
     
-    // For now, return the raw loop count for calibration
-    // We'll use this to determine the correct expected value
     return (long)loop_count;
 }
 
 // RTC Calibration using CPU clock as reference
 void calibrateRtc(void) {
     char key;
-    long expected_loops = 5000;  // Expected loops per second for properly calibrated RTC
+    long expected_loops = 5000;
     
     printStr("\r\n=== RTC Calibration Mode ===\r\n");
     printStr("CPU Clock: 7,372,800 Hz\r\n");
@@ -637,8 +586,7 @@ void calibrateRtc(void) {
         
         printStr("    ");
         
-        // Small delay to make it readable
-        for (int i = 0; i < 10000; i++) { /* brief pause */ }
+        for (int i = 0; i < 5000; i++);  // Brief pause
     }
 }
 
@@ -685,7 +633,7 @@ void main(void) {
     char command;
     int result;
     
-    printStr("RTC Calibration Utility v0.5.0 (HBIOS)\r\n");
+    printStr("RTC Calibration Utility v0.5.1 (HBIOS)\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
