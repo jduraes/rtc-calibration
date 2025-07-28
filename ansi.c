@@ -1,9 +1,8 @@
 #include "ansi.h"
-#include <stdio.h>
 
-// Use Z88DK's built-in putchar - no need for custom implementation
+extern int cpm_putchar(int c);
+#define putchar cpm_putchar
 
-// Helper function to print a number as decimal
 void print_num(int num) {
     if (num >= 10) {
         print_num(num / 10);
@@ -90,41 +89,41 @@ void ansi_clear_to_eol(void) {
     putchar('K');
 }
 
-void ansi_set_fg_color(ansi_color_t color) {
+void ansi_set_fg_colour(ansi_colour_t colour) {
     putchar(27);  // ESC
     putchar('[');
     
-    if (color >= 8) {
-        // Bright colors: ESC[1;3Xm format
+    if (colour >= 8) {
+        // Bright colours: ESC[1;3Xm format
         putchar('1');
         putchar(';');
         putchar('3');
-        putchar('0' + (color - 8));
+        putchar('0' + (colour - 8));
     } else {
-        // Normal colors: ESC[3Xm format (30-37)
+        // Normal colours: ESC[3Xm format (30-37)
         putchar('3');
-        putchar('0' + color);
+        putchar('0' + colour);
     }
     putchar('m');
 }
 
-void ansi_set_bg_color(ansi_color_t color) {
+void ansi_set_bg_colour(ansi_colour_t colour) {
     putchar(27);  // ESC
     putchar('[');
-    if (color >= 8) {
-        // Bright background colors (8-15): use ESC[10Xm format
+    if (colour >= 8) {
+        // Bright background colours (8-15): use ESC[10Xm format
         putchar('1');
         putchar('0');
-        putchar('0' + (color - 8));
+        putchar('0' + (colour - 8));
     } else {
-        // Normal background colors (0-7): use ESC[4Xm format (40-47)
+        // Normal background colours (0-7): use ESC[4Xm format (40-47)
         putchar('4');
-        putchar('0' + color);
+        putchar('0' + colour);
     }
     putchar('m');
 }
 
-void ansi_reset_colors(void) {
+void ansi_reset_colours(void) {
     putchar(27);  // ESC
     putchar('[');
     putchar('0');

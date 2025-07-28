@@ -1,20 +1,14 @@
-# Makefile for RTC Calibration Utility (HBIOS version)
-# For RC2014/RomWBW systems with HBIOS RTC support
-
-# Compiler and tools
+# RTC Calibration Utility Makefile
 ZCC = zcc
 TARGET = +cpm
 CFLAGS = -SO3 -compiler=sccz80
 LDFLAGS = 
 ASM = zcc
 ASMFLAGS = +cpm
-
-# Target executable
 TARGET_NAME = rtccalib
 
-# Source files
 C_SOURCES = rtccalib.c ansi.c
-ASM_SOURCES = rtc.asm cpm.asm measure.asm
+ASM_SOURCES = rtc.asm cpm.asm
 HEADERS = rtc.h cpm.h ansi.h
 
 # Object files

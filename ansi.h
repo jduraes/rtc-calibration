@@ -9,7 +9,7 @@ typedef enum {
     ANSI_FULL_SUPPORT = 3
 } ansi_capability_t;
 
-// ANSI colors
+// ANSI colours
 typedef enum {
     ANSI_BLACK = 0,
     ANSI_RED = 1,
@@ -27,7 +27,7 @@ typedef enum {
     ANSI_BRIGHT_MAGENTA = 13,
     ANSI_BRIGHT_CYAN = 14,
     ANSI_BRIGHT_WHITE = 15
-} ansi_color_t;
+} ansi_colour_t;
 
 // Function prototypes
 
@@ -43,10 +43,10 @@ void ansi_goto_xy(int x, int y);
 void ansi_clear_line(void);
 void ansi_clear_to_eol(void);
 
-// Color functions
-void ansi_set_fg_color(ansi_color_t color);
-void ansi_set_bg_color(ansi_color_t color);
-void ansi_reset_colors(void);
+// Colour functions
+void ansi_set_fg_colour(ansi_colour_t colour);
+void ansi_set_bg_colour(ansi_colour_t colour);
+void ansi_reset_colours(void);
 void ansi_set_bold(void);
 void ansi_set_dim(void);
 void ansi_set_underline(void);

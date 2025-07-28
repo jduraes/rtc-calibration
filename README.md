@@ -1,57 +1,47 @@
-# RTC Calibration Utility for RC2014
+# RTC Calibration Utility
 
-A real-time clock calibration utility for RC2014 systems running RomWBW BIOS with RTC hardware support.
+Real-time clock calibration utility for RC2014 systems with RomWBW HBIOS RTC support.
 
 ## Features
 
-- **RTC Detection**: Automatically detects RTC hardware via HBIOS calls
-- **Time Display**: Shows current date and time in DD/MM/YYYY HH:MM:SS format  
-- **Time Setting**: User-friendly prompts for setting date and time
-- **Hardware Test**: Validates RTC communication and data integrity
-- **HBIOS Integration**: Uses RomWBW's HBIOS RTC services for maximum compatibility
-
-## Version History
-
-- **v0.1.10** - Current version with clean UI and proper HBIOS integration
-- **v0.1.9** - Added user-friendly date/time input with ESC abort support
-- **v0.1.8** - Fixed stack corruption bugs and improved error handling
-- **v0.1.7** - Resolved HBIOS return code interpretation issues
+- RTC time display and setting
+- Interactive time adjustment with arrow keys
+- RTC calibration against CPU clock
+- Hardware testing and validation
+- ANSI colour support (optional)
+- HBIOS integration for maximum compatibility
 
 ## Requirements
 
-- RC2014 system with RTC hardware (DS1302 or compatible)
+- RC2014 with RTC hardware
 - RomWBW BIOS with HBIOS RTC support
-- CP/M compatible operating system
+- CP/M operating system
 
 ## Building
-
-Requires [z88dk](https://github.com/z88dk/z88dk) cross-compiler:
 
 ```bash
 make
 ```
 
-This produces `rtccalib.com` for CP/M systems.
+Requires [z88dk](https://github.com/z88dk/z88dk) toolchain.
 
 ## Usage
 
-```
-rtccalib [command]
+Run `rtccalib.com` and use the interactive menu:
 
-Commands:
-  (none)  - Show current time
-  s       - Set time  
-  t       - Hardware test
-  h       - Show help
-```
+- **S** - Show current date/time
+- **D** - Set RTC date
+- **T** - Set RTC time (with arrow key adjustment)
+- **H** - Hardware test
+- **C** - Calibrate RTC speed
+- **A** - Toggle ANSI colours
+- **?** - Help
+- **Q** - Quit
 
-## Technical Details
+## Licence
 
-- Uses HBIOS functions 20h (get time) and 21h (set time)
-- Handles both success (0x00) and valid non-zero (0xB8) return codes
-- 6-byte BCD time format: YYMMDDHHMMSS
-- Assembly wrappers provide proper Z80/HBIOS calling conventions
+This software is provided free of charge and may be freely copied, modified, and distributed. It is provided "as is" without warranty of any kind, either express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
 
-## License
+In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
 
-Open source - feel free to modify and distribute.
+Feel free to modify, distribute, and use this software for any purpose.

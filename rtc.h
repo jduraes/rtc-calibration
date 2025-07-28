@@ -1,16 +1,13 @@
 #ifndef RTC_H
 #define RTC_H
 
-#include <stdint.h>
-
-// RTC time structure
 typedef struct {
-    uint8_t second;
-    uint8_t minute;
-    uint8_t hour;
-    uint8_t date;
-    uint8_t month;
-    uint8_t year;
+    unsigned char second;
+    unsigned char minute;
+    unsigned char hour;
+    unsigned char date;
+    unsigned char month;
+    unsigned char year;
 } RTC_Time;
 
 // Function prototypes for HBIOS RTC access
