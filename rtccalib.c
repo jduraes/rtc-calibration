@@ -621,16 +621,16 @@ void showHelp(void) {
     
     if (ansi_enabled) {
         // Draw top border (47 dashes + 2 plus signs = 49 total width)
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("+-----------------------------------------------+\r\n");
         
         // Title line (45 characters of content + 2 spaces = 47 total inside border)
         printStr("|");
-        ansi_set_fg_colour(ANSI_BRIGHT_WHITE);
+        ansi_set_fg_color(ANSI_BRIGHT_WHITE);
         ansi_set_bold();
         printStr(" RTC Calibration Utility Help                  ");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         // Separator
@@ -638,83 +638,83 @@ void showHelp(void) {
         
         // Command entries with colored letters (45 characters of content + 2 spaces = 47 total inside border)
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("S");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Show current date/time                    ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("D");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Set RTC date                              ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("T");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Set RTC time (arrow keys, 10s increments) ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("H");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Hardware test                             ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("C");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Calibrate RTC speed                       ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("A");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Toggle ANSI colours on/off                ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("?");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Show this help                            ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         printStr("| ");
-        ansi_set_fg_colour(ANSI_YELLOW);
+        ansi_set_fg_color(ANSI_YELLOW);
         ansi_set_bold();
         printStr("Q");
         ansi_reset_attributes();
-        ansi_set_fg_colour(ANSI_WHITE);
+        ansi_set_fg_color(ANSI_WHITE);
         printStr(" - Quit programme                            ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         // Bottom separator
@@ -722,15 +722,15 @@ void showHelp(void) {
         
         // Footer (45 characters of content + 2 spaces = 47 total inside border)
         printStr("|");
-        ansi_set_fg_colour(ANSI_BRIGHT_GREEN);
+        ansi_set_fg_color(ANSI_BRIGHT_GREEN);
         printStr(" For RC2014 with RomWBW HBIOS RTC support      ");
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
         // Bottom border
         printStr("+-----------------------------------------------+\r\n");
         
-        ansi_reset_colours();
+        ansi_reset_colors();
     } else {
         // Plain text version for non-ANSI terminals
         printStr("=== RTC Calibration Utility Help ===\r\n");
@@ -758,7 +758,7 @@ void main(void) {
     if (ansi_enabled) {
         ansi_clear_screen();
         ansi_home_cursor();
-        ansi_set_fg_colour(ANSI_BRIGHT_CYAN);
+        ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         ansi_set_bold();
     }
     
@@ -781,87 +781,87 @@ void main(void) {
     // Main menu loop
     while (1) {
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_BLUE);
+            ansi_set_fg_color(ANSI_BRIGHT_BLUE);
             ansi_set_bold();
         }
         printStr("\r\n--- Main Menu ---\r\n");
         
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_WHITE);
+            ansi_set_fg_color(ANSI_WHITE);
             ansi_reset_attributes();
         }
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("S");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")how Date/Time - Set ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("D");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")ate / ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("T");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")ime - ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("H");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")ardware Test - ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("C");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")alibrate - ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("A");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")NSI Colours - ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("?");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")Help - ");
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_YELLOW);
+            ansi_set_fg_color(ANSI_BRIGHT_YELLOW);
         }
         printStr("Q");
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         printStr(")uit\r\n");
         
         if (ansi_enabled) {
-            ansi_set_fg_colour(ANSI_BRIGHT_GREEN);
+            ansi_set_fg_color(ANSI_BRIGHT_GREEN);
         }
         printStr("Command: ");
         
         if (ansi_enabled) {
-            ansi_reset_colours();
+            ansi_reset_colors();
         }
         
         // Wait for command
@@ -877,25 +877,25 @@ void main(void) {
                 if (result == 0 || result == 0xB8) {
                     convertFromBcd(&datetime);
                     if (ansi_enabled) {
-                        ansi_set_fg_colour(ANSI_CYAN);
+                        ansi_set_fg_color(ANSI_CYAN);
                     }
                     printStr("Current time: ");
                     if (ansi_enabled) {
-                        ansi_set_fg_colour(ANSI_BRIGHT_WHITE);
+                        ansi_set_fg_color(ANSI_BRIGHT_WHITE);
                         ansi_set_bold();
                     }
                     printDateTime(&datetime);
                     if (ansi_enabled) {
-                        ansi_reset_colours();
+                        ansi_reset_colors();
                     }
                     printStr("\r\n");
                 } else {
                     if (ansi_enabled) {
-                        ansi_set_fg_colour(ANSI_BRIGHT_RED);
+                        ansi_set_fg_color(ANSI_BRIGHT_RED);
                     }
                     printStr("Error reading RTC time\r\n");
                     if (ansi_enabled) {
-                        ansi_reset_colours();
+                        ansi_reset_colors();
                     }
                 }
                 break;
