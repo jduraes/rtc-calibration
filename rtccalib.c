@@ -531,7 +531,11 @@ long measureRtcTiming(void) {
 // RTC Calibration using CPU clock as reference
 void calibrateRtc(void) {
     char key;
-    long expected_loops = 5000;
+    // Adjusted based on observed 13 seconds slow over 24 hours
+    // 13/86400 = 0.01505% slow, meaning RTC runs at 99.985% speed
+    // If RTC was properly calibrated, we'd expect ~5000 loops per second
+    // But since it's slow, we expect fewer loops: 5000 * 0.99985 = 4999.25
+    long expected_loops = 4999;  // Calibrated for observed -0.015% drift
     
     printStr("\r\n=== RTC Calibration Mode ===\r\n");
     printStr("CPU Clock: 7,372,800 Hz\r\n");
@@ -762,7 +766,7 @@ void main(void) {
         ansi_set_bold();
     }
     
-    printStr("RTC Calibration Utility v1.0.0\r\n");
+    printStr("RTC Calibration Utility v1.0.1\r\n");
     printStr("For RC2014 with RomWBW HBIOS RTC support\r\n");
     printStr("========================================\r\n");
 
