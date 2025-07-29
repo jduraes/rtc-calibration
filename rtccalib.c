@@ -133,6 +133,34 @@ int readString(char *buffer, int maxLen) {
     return 0;
 }
 
+// Add minutes to time
+void adjustTimeMinutes(RTC_Time *time, int minutes) {
+    int total_minutes = time->minute + minutes;
+    int total_hours = time->hour;
+    
+    // Handle minutes overflow/underflow
+    while (total_minutes >= 60) {
+        total_minutes -= 60;
+        total_hours++;
+    }
+    while (total_minutes < 0) {
+        total_minutes += 60;
+        total_hours--;
+    }
+    
+    // Handle hours overflow/underflow
+    while (total_hours >= 24) {
+        total_hours -= 24;
+    }
+    while (total_hours < 0) {
+        total_hours += 24;
+    }
+    
+    // Update time
+    time->minute = total_minutes;
+    time->hour = total_hours;
+}
+
 // Add seconds and round to next 10-second mark
 void adjustTimeRounded(RTC_Time *time, int seconds) {
     int total_seconds = time->second + seconds;
@@ -202,6 +230,8 @@ int interactiveTimeSet(RTC_Time *time) {
     int escape_seq = 0;
     
     printStr("\r\nUse UP/DOWN arrows to adjust time by 10 seconds (rounded)\r\n");
+    printStr("Use LEFT/RIGHT arrows to adjust time by 1 minute\r\n");
+    printStr("Press number keys to manually type time\r\n");
     printStr("Press ENTER to set this time, ESC to abort\r\n\r\n");
     
     while (1) {
@@ -234,16 +264,73 @@ int interactiveTimeSet(RTC_Time *time) {
                 adjustTimeRounded(time, 10);  // Add 10 seconds, rounded
             } else if (ch == 'B') {  // DOWN arrow
                 adjustTimeRounded(time, -10);  // Subtract 10 seconds, rounded
+            } else if (ch == 'C') {  // RIGHT arrow
+                adjustTimeMinutes(time, 1);  // Add 1 minute
+            } else if (ch == 'D') {  // LEFT arrow
+                adjustTimeMinutes(time, -1);  // Subtract 1 minute
+            }
+        } else {  // Direct number entry
+            if (ch >= '0' && ch <= '9') {
+                // Switch to manual time input mode
+                char timeBuffer[10];
+                timeBuffer[0] = ch;
+                int pos = 1;
+                
+                printStr("\r\nManual time entry (HH:MM:SS): ");
+                printChar(ch);
+                
+                // Read rest of time string
+                while (pos < 8) {
+                    char input = cRawIo();
+                    if (input == 0) continue;
+                    
+                    if (input == 27) {  // ESC - cancel manual entry
+                        printStr("\r\nCancelled manual entry\r\n");
+                        break;
+                    }
+                    
+                    if (input == 13 || input == 10) {  // Enter - finish early
+                        break;
+                    }
+                    
+                    if (input == 8 || input == 127) {  // Backspace
+                        if (pos > 0) {
+                            pos--;
+                            printStr("\b \b");
+                        }
+                        continue;
+                    }
+                    
+                    // Accept valid time characters
+                    if ((input >= '0' && input <= '9') || input == ':') {
+                        timeBuffer[pos] = input;
+                        pos++;
+                        printChar(input);
+                    }
+                }
+                
+                timeBuffer[pos] = '\0';
+                
+                // Try to parse the entered time
+                unsigned char hour, minute, second;
+                if (pos >= 5 && parseTime(timeBuffer, &hour, &minute, &second)) {
+                    time->hour = hour;
+                    time->minute = minute;
+                    time->second = second;
+                    printStr("\r\nTime updated successfully\r\n");
+                } else if (pos > 0) {
+                    printStr("\r\nInvalid time format\r\n");
+                }
             }
         }
-        
+
         // Reset escape sequence state for any other key
         escape_seq = 0;
-        
+
         if (ch == 13 || ch == 10) {  // Enter key - set the time
             return 0;
         }
-        
+
         if (ch == 27) {  // Direct ESC without sequence
             return 1;
         }
@@ -547,6 +634,11 @@ void calibrateRtc(void) {
     printStr("- Measures RTC timing accuracy against CPU clock\r\n");
     printStr("- Shows percentage deviation from expected timing\r\n");
     printStr("- Adjust capacitor value to get close to 0.00%\r\n");
+    printStr("- This will take time - BE PATIENT! Observe the flashing cursor behaviour.\r\n");
+    printStr("- The system is not frozen - it just takes time in between measurements,\r\n");
+    printStr("  especially with larger capacitors.\r\n");
+    printStr("- Replace capacitors between value changes (or trim variable capacitor)\r\n");
+    printStr("  and wait.\r\n");
     printStr("- Press ESC to stop\r\n\r\n");
     
     printStr("Starting calibration...\r\n");
@@ -667,7 +759,7 @@ void showHelp(void) {
         printStr("T");
         ansi_reset_attributes();
         ansi_set_fg_color(ANSI_WHITE);
-        printStr(" - Set RTC time (arrow keys, 10s increments) ");
+        printStr(" - Set RTC time (arrows/numbers for input)   ");
         ansi_set_fg_color(ANSI_BRIGHT_CYAN);
         printStr("|\r\n");
         
@@ -741,7 +833,7 @@ void showHelp(void) {
         printStr("Commands:\r\n");
         printStr("  S - Show current date/time\r\n");
         printStr("  D - Set RTC date\r\n");
-        printStr("  T - Set RTC time (with arrow key adjustment, 10s increments)\r\n");
+        printStr("  T - Set RTC time (arrows: UP/DOWN 10s, LEFT/RIGHT 1m, numbers: manual)\r\n");
         printStr("  H - Hardware test\r\n");
         printStr("  C - Calibrate RTC speed\r\n");
         printStr("  A - Toggle ANSI colours on/off\r\n");
