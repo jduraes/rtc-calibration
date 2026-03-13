@@ -2,6 +2,25 @@
 #include "rtc.h"
 #include "ansi.h"
 
+/* CPU clock frequency in Hz.
+   Override at compile time for different hardware targets:
+     RC2014 standard : 7,372,800 Hz (default)
+     UC80 / half-speed: 3,686,400 Hz (-DCPU_CLOCK_HZ=3686400)
+*/
+#ifndef CPU_CLOCK_HZ
+#define CPU_CLOCK_HZ 7372800UL
+#endif
+
+/* Expected timing-loop iterations per RTC second, calibrated at CPU_CLOCK_HZ.
+   Derived empirically at 7,372,800 Hz (RC2014 standard): 4999 loops/sec.
+   The loop body costs approximately 1475 CPU cycles
+   (7,372,800 Hz / 4999 loops/s ≈ 1475 cycles/loop).
+   Scale linearly for other clock speeds: CPU_CLOCK_HZ / 1475.
+   Override with -DLOOPS_PER_SEC=<value> for precise hardware calibration. */
+#ifndef LOOPS_PER_SEC
+#define LOOPS_PER_SEC ((long)(CPU_CLOCK_HZ / 1475L))
+#endif
+
 void printLong(unsigned long num);
 int ansi_enabled = 0;
 
@@ -133,85 +152,50 @@ int readString(char *buffer, int maxLen) {
     return 0;
 }
 
-// Add minutes to time
+// Add minutes to time (delta is always ±1 from the interactive setter)
 void adjustTimeMinutes(RTC_Time *time, int minutes) {
-    int total_minutes = time->minute + minutes;
-    int total_hours = time->hour;
-    
-    // Handle minutes overflow/underflow
-    while (total_minutes >= 60) {
-        total_minutes -= 60;
-        total_hours++;
-    }
-    while (total_minutes < 0) {
-        total_minutes += 60;
-        total_hours--;
-    }
-    
-    // Handle hours overflow/underflow
-    while (total_hours >= 24) {
-        total_hours -= 24;
-    }
-    while (total_hours < 0) {
-        total_hours += 24;
-    }
-    
-    // Update time
+    int total_minutes = (int)time->minute + minutes;
+    int total_hours   = (int)time->hour;
+
+    // Single-step overflow/underflow is all that can occur for ±1 input
+    if (total_minutes >= 60) { total_minutes -= 60; total_hours++; }
+    else if (total_minutes < 0) { total_minutes += 60; total_hours--; }
+
+    if (total_hours >= 24) total_hours -= 24;
+    else if (total_hours < 0) total_hours += 24;
+
     time->minute = total_minutes;
-    time->hour = total_hours;
+    time->hour   = total_hours;
 }
 
-// Add seconds and round to next 10-second mark
+// Add seconds and round to next 10-second mark (delta is always ±10)
 void adjustTimeRounded(RTC_Time *time, int seconds) {
-    int total_seconds = time->second + seconds;
-    int total_minutes = time->minute;
-    int total_hours = time->hour;
-    
-    // Handle seconds overflow/underflow
-    while (total_seconds >= 60) {
-        total_seconds -= 60;
-        total_minutes++;
-    }
-    while (total_seconds < 0) {
-        total_seconds += 60;
-        total_minutes--;
-    }
-    
+    int total_seconds = (int)time->second + seconds;
+    int total_minutes = (int)time->minute;
+    int total_hours   = (int)time->hour;
+
+    // Single-step overflow/underflow for ±10 seconds
+    if (total_seconds >= 60) { total_seconds -= 60; total_minutes++; }
+    else if (total_seconds < 0) { total_seconds += 60; total_minutes--; }
+
     // Round to next 10-second mark
     if (seconds > 0) {
-        // Round up to next decade
         total_seconds = ((total_seconds + 9) / 10) * 10;
-        if (total_seconds >= 60) {
-            total_seconds = 0;
-            total_minutes++;
-        }
+        if (total_seconds >= 60) { total_seconds = 0; total_minutes++; }
     } else if (seconds < 0) {
-        // Round down to previous decade
         total_seconds = (total_seconds / 10) * 10;
     }
-    
-    // Handle minutes overflow/underflow
-    while (total_minutes >= 60) {
-        total_minutes -= 60;
-        total_hours++;
-    }
-    while (total_minutes < 0) {
-        total_minutes += 60;
-        total_hours--;
-    }
-    
-    // Handle hours overflow/underflow
-    while (total_hours >= 24) {
-        total_hours -= 24;
-    }
-    while (total_hours < 0) {
-        total_hours += 24;
-    }
-    
-    // Update only the time portion
+
+    // Single-step overflow/underflow on minutes after rounding
+    if (total_minutes >= 60) { total_minutes -= 60; total_hours++; }
+    else if (total_minutes < 0) { total_minutes += 60; total_hours--; }
+
+    if (total_hours >= 24) total_hours -= 24;
+    else if (total_hours < 0) total_hours += 24;
+
     time->second = total_seconds;
     time->minute = total_minutes;
-    time->hour = total_hours;
+    time->hour   = total_hours;
 }
 
 // Print only time portion (HH:MM:SS)
@@ -566,12 +550,16 @@ void printPercentage(long pct_100) {
     printChar('%');
 }
 
-// Simple RTC timing measurement - avoid crashes by using minimal RTC calls
+// Simple RTC timing measurement
 long measureRtcTiming(void) {
     RTC_Time start_time, current_time;
     unsigned long loop_count = 0;
     unsigned char start_second, current_second;
     int rtc_result;
+    /* Scale limits to CPU clock speed.  Max ≈ 5× expected (generous timeout).
+       Check interval ≈ 1× expected (poll RTC roughly once per second). */
+    unsigned long max_loops    = (unsigned long)LOOPS_PER_SEC * 5UL;
+    unsigned long check_countdown = (unsigned long)LOOPS_PER_SEC;
     
     // Get initial RTC time
     rtc_result = hbios_rtc_get_time(&start_time);
@@ -596,13 +584,14 @@ long measureRtcTiming(void) {
     do {
         loop_count++;
         
-        // Limit loop count to 25,000 to prevent system slowdown with high capacitance
-        if (loop_count >= 25000) {
+        if (loop_count >= max_loops) {
             break;
         }
         
-        // Check RTC every 5000 loops to avoid too many HBIOS calls but stay responsive
-        if ((loop_count % 5000) == 0) {
+        // Use a countdown to avoid modulo division on every iteration
+        check_countdown--;
+        if (check_countdown == 0) {
+            check_countdown = (unsigned long)LOOPS_PER_SEC;
             rtc_result = hbios_rtc_get_time(&current_time);
             if (rtc_result != 0 && rtc_result != 0xB8) {
                 return 0x8000;  // Error code
@@ -618,14 +607,12 @@ long measureRtcTiming(void) {
 // RTC Calibration using CPU clock as reference
 void calibrateRtc(void) {
     char key;
-    // Adjusted based on observed 13 seconds slow over 24 hours
-    // 13/86400 = 0.01505% slow, meaning RTC runs at 99.985% speed
-    // If RTC was properly calibrated, we'd expect ~5000 loops per second
-    // But since it's slow, we expect fewer loops: 5000 * 0.99985 = 4999.25
-    long expected_loops = 4999;  // Calibrated for observed -0.015% drift
+    long expected_loops = LOOPS_PER_SEC;
     
     printStr("\r\n=== RTC Calibration Mode ===\r\n");
-    printStr("CPU Clock: 7,372,800 Hz\r\n");
+    printStr("CPU Clock: ");
+    printLong((unsigned long)CPU_CLOCK_HZ);
+    printStr(" Hz\r\n");
     printStr("Expected loops per RTC second: ");
     printLong(expected_loops);
     printStr("\r\n\r\n");

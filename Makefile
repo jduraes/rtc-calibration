@@ -1,7 +1,15 @@
 # RTC Calibration Utility Makefile
 ZCC = zcc
 TARGET = +cpm
-CFLAGS = -SO3 -compiler=sccz80
+# CPU clock frequency in Hz.
+#   RC2014 standard: 7,372,800 Hz (default)
+#   UC80 / half-speed: 3,686,400 Hz  -> make uc80
+CPU_CLOCK_HZ ?= 7372800
+# Timing-loop iterations per RTC second (scaled from CPU_CLOCK_HZ at build time).
+# 1475 = approx cycles per loop iteration (7,372,800 Hz / 4999 loops/s, measured on RC2014).
+# Override with the empirically measured value for your hardware if needed.
+LOOPS_PER_SEC ?= $(shell echo $$(( $(CPU_CLOCK_HZ) / 1475 )) )
+CFLAGS = -SO3 -compiler=sccz80 -DCPU_CLOCK_HZ=$(CPU_CLOCK_HZ)UL -DLOOPS_PER_SEC=$(LOOPS_PER_SEC)L
 LDFLAGS = 
 ASM = zcc
 ASMFLAGS = +cpm
@@ -55,6 +63,10 @@ test: $(TARGET_NAME).com
 	@echo "Testing $(TARGET_NAME).com requires RC2014/RomWBW environment"
 	@echo "Copy $(TARGET_NAME).com to your RC2014 system and run it"
 
+# UC80 build: half-speed clock (3.6864 MHz), loops scaled accordingly
+uc80:
+	$(MAKE) CPU_CLOCK_HZ=3686400 LOOPS_PER_SEC=2499 TARGET_NAME=$(TARGET_NAME)_uc80
+
 # Display help
 help:
 	@echo "RTC Calibration Utility (HBIOS) - Available targets:"
@@ -68,5 +80,10 @@ help:
 	@echo "  - z88dk toolchain"
 	@echo "  - RC2014 with RomWBW HBIOS"
 	@echo "  - RTC hardware supported by RomWBW"
+	@echo ""
+	@echo "Clock speed targets:"
+	@echo "  all      - Build for RC2014 standard (CPU_CLOCK_HZ=$(CPU_CLOCK_HZ))"
+	@echo "  uc80     - Build for UC80 half-speed (3,686,400 Hz)"
+	@echo "  Override: make CPU_CLOCK_HZ=<hz> [LOOPS_PER_SEC=<n>]"
 
-.PHONY: all clean install test help
+.PHONY: all clean install test help uc80
