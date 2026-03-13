@@ -39,7 +39,7 @@ _detect_exit:
 	RET
 
 ;
-; Get time from HBIOS RTC - SIMPLIFIED VERSION
+; Get time from HBIOS RTC
 ; int hbios_rtc_get_time(RTC_Time *time)
 ; HL points to RTC_Time structure
 ; Returns: 0 on success, -1 on error
@@ -47,15 +47,11 @@ _detect_exit:
 _hbios_rtc_get_time:
 	PUSH	BC
 	PUSH	DE
-	
-	; Save structure pointer in DE
-	LD	D, H
-	LD	E, L
-	
-	; Call HBIOS exactly like the test function
+	PUSH	HL			; Save structure pointer directly
+
+	; Call HBIOS to read RTC time
 	LD	B, 20h			; HBIOS RTC get time function
 	LD	HL, TIME_BUF_GET	; Point to dedicated get buffer
-	PUSH	DE			; Save structure pointer on stack
 	LD	D, 0			; Unit 0
 	RST	08			; Call HBIOS via RST
 	
@@ -108,7 +104,7 @@ _get_time_exit:
 	RET
 
 ;
-; Set time to HBIOS RTC  
+; Set time to HBIOS RTC
 ; int hbios_rtc_set_time(const RTC_Time *time)
 ; HL points to RTC_Time structure
 ; Returns: 0 on success, -1 on error
@@ -116,70 +112,52 @@ _get_time_exit:
 _hbios_rtc_set_time:
 	PUSH	BC
 	PUSH	DE
-	PUSH	HL			; Save structure pointer
-	
-	; Convert from our format (SSMMHHDDMMYY) to HBIOS format (YYMMDDHHMMSS)
+
+	; Reorder bytes from our format to HBIOS format in one linear pass.
 	; Our:   [0]=SS [1]=MM [2]=HH [3]=DD [4]=MM [5]=YY
 	; HBIOS: [0]=YY [1]=MM [2]=DD [3]=HH [4]=MM [5]=SS
-	
-	; Store year (our byte 5 -> HBIOS byte 0)
-	LD	A, (HL)			; Skip to year (byte 5)
+
+	; Seconds (our byte 0 -> HBIOS byte 5)
+	LD	A, (HL)
+	LD	(TIME_BUF_SET+5), A
 	INC	HL
+
+	; Minutes (our byte 1 -> HBIOS byte 4)
+	LD	A, (HL)
+	LD	(TIME_BUF_SET+4), A
 	INC	HL
+
+	; Hours (our byte 2 -> HBIOS byte 3)
+	LD	A, (HL)
+	LD	(TIME_BUF_SET+3), A
 	INC	HL
+
+	; Date (our byte 3 -> HBIOS byte 2)
+	LD	A, (HL)
+	LD	(TIME_BUF_SET+2), A
 	INC	HL
+
+	; Month (our byte 4 -> HBIOS byte 1)
+	LD	A, (HL)
+	LD	(TIME_BUF_SET+1), A
 	INC	HL
-	LD	A, (HL)			; Get year
-	LD	(TIME_BUF_SET+0), A		; Store in HBIOS buffer
-	
-	; Restore pointer and get month (our byte 4 -> HBIOS byte 1)
-	POP	HL			; Restore structure pointer
-	PUSH	HL			; Save again
-	INC	HL
-	INC	HL
-	INC	HL
-	INC	HL			; Point to month
-	LD	A, (HL)			; Get month
-	LD	(TIME_BUF_SET+1), A		; Store in HBIOS buffer
-	
-	; Get date (our byte 3 -> HBIOS byte 2)
-	DEC	HL			; Point to date
-	LD	A, (HL)			; Get date
-	LD	(TIME_BUF_SET+2), A		; Store in HBIOS buffer
-	
-	; Get hours (our byte 2 -> HBIOS byte 3)
-	DEC	HL			; Point to hours
-	LD	A, (HL)			; Get hours
-	LD	(TIME_BUF_SET+3), A		; Store in HBIOS buffer
-	
-	; Get minutes (our byte 1 -> HBIOS byte 4)
-	DEC	HL			; Point to minutes
-	LD	A, (HL)			; Get minutes
-	LD	(TIME_BUF_SET+4), A		; Store in HBIOS buffer
-	
-	; Get seconds (our byte 0 -> HBIOS byte 5)
-	DEC	HL			; Point to seconds
-	LD	A, (HL)			; Get seconds
-	LD	(TIME_BUF_SET+5), A		; Store in HBIOS buffer
-	
+
+	; Year (our byte 5 -> HBIOS byte 0)
+	LD	A, (HL)
+	LD	(TIME_BUF_SET+0), A
+
 	; Call HBIOS to set time
 	LD	B, 21h			; HBIOS RTC set time function
 	LD	D, 0			; Unit 0
 	LD	HL, TIME_BUF_SET	; Point to HBIOS buffer
 	RST	08			; Call HBIOS via RST
-	
-	; Check result
+
+	; Return 0 on success, 0xFFFF on error
 	OR	A			; Test A for zero
-	JR	NZ, _set_time_error	; Jump if error
-	
-	POP	HL			; Restore structure pointer
-	LD	HL, 0			; Return 0 (success)
-	JR	_set_time_exit
-	
-_set_time_error:
-	POP	HL			; Restore structure pointer  
+	LD	HL, 0			; Assume success
+	JR	Z, _set_time_exit	; Jump if successful
 	LD	HL, 0FFFFh		; Return -1 (error)
-	
+
 _set_time_exit:
 	POP	DE
 	POP	BC
