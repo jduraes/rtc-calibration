@@ -13,9 +13,7 @@ BF_RTCSET	EQU	21h		; RTC set time function
 ; Returns: 1 if RTC detected, 0 if not
 ;
 _hbios_rtc_detect:
-	PUSH	BC
-	PUSH	DE
-	
+	; BC and DE are caller-save in sccz80 calling convention; no push needed.
 	; Try to get time to test RTC presence (with unit 0)
 	LD	B, 20h			; HBIOS RTC get time function
 	LD	D, 0			; Unit 0
@@ -28,14 +26,10 @@ _hbios_rtc_detect:
 	
 	; RTC not available or error
 	LD	HL, 0			; Return 0 (not detected)
-	JR	_detect_exit
+	RET
 	
 _detect_success:
 	LD	HL, 1			; Return 1 (detected)
-	
-_detect_exit:
-	POP	DE
-	POP	BC
 	RET
 
 ;
@@ -45,9 +39,7 @@ _detect_exit:
 ; Returns: 0 on success, -1 on error
 ;
 _hbios_rtc_get_time:
-	PUSH	BC
-	PUSH	DE
-	PUSH	HL			; Save structure pointer directly
+	PUSH	HL			; Save structure pointer
 
 	; Call HBIOS to read RTC time
 	LD	B, 20h			; HBIOS RTC get time function
@@ -55,7 +47,7 @@ _hbios_rtc_get_time:
 	LD	D, 0			; Unit 0
 	RST	08			; Call HBIOS via RST
 	
-	; Save the HBIOS return code in C
+	; Save the HBIOS return code in C (BC/DE are caller-save; C used as scratch)
 	LD	C, A			; Save return code in C
 	
 	; Get structure pointer back
@@ -99,8 +91,6 @@ _hbios_rtc_get_time:
 	LD	H, 0			; Clear high byte
 	
 _get_time_exit:
-	POP	DE
-	POP	BC
 	RET
 
 ;
@@ -110,8 +100,7 @@ _get_time_exit:
 ; Returns: 0 on success, -1 on error
 ;
 _hbios_rtc_set_time:
-	PUSH	BC
-	PUSH	DE
+	; BC and DE are caller-save in sccz80 calling convention; no push needed.
 
 	; Reorder bytes from our format to HBIOS format in one linear pass.
 	; Our:   [0]=SS [1]=MM [2]=HH [3]=DD [4]=MM [5]=YY
@@ -159,8 +148,6 @@ _hbios_rtc_set_time:
 	LD	HL, 0FFFFh		; Return -1 (error)
 
 _set_time_exit:
-	POP	DE
-	POP	BC
 	RET
 
 ;
@@ -169,8 +156,7 @@ _set_time_exit:
 ; Returns error code directly from HBIOS
 ;
 _hbios_rtc_test:
-	PUSH	DE			; Save DE register
-	
+	; DE is caller-save in sccz80 calling convention; no push needed.
 	; Try with unit 0 first (most common)
 	LD	B, 20h			; RTC get time function
 	LD	D, 0			; Unit 0
@@ -181,7 +167,6 @@ _hbios_rtc_test:
 	LD	L, A			; Return HBIOS error code
 	LD	H, 0			; Clear high byte
 	
-	POP	DE			; Restore DE
 	RET
 
 	SECTION data_user

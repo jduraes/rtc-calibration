@@ -19,11 +19,34 @@ Real-time clock calibration utility for RC2014 systems with RomWBW HBIOS RTC sup
 
 ## Building
 
+### Default (z88dk / RC2014 standard clock)
+
 ```bash
 make
 ```
 
 Requires [z88dk](https://github.com/z88dk/z88dk) toolchain.
+
+### UC80 compiler (half-speed / 3.6864 MHz variant)
+
+```bash
+make uc80
+```
+
+Requires [UC80](https://github.com/avwohl/uc80) compiler.  Assembly files
+(`rtc.asm`, `cpm.asm`) still use z88dk for `SECTION`/`PUBLIC` syntax.
+Override the compiler path if needed:
+
+```bash
+make uc80 UC80=/path/to/uc80
+```
+
+Both targets accept `CPU_CLOCK_HZ` and `LOOPS_PER_SEC` overrides for custom
+hardware:
+
+```bash
+make CPU_CLOCK_HZ=4000000
+```
 
 ## Usage
 
